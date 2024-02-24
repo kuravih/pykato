@@ -206,7 +206,7 @@ def Complex_Diagram(zdata, figure: Optional[Figure] = None, modLim: Tuple[float,
     imshow_ax.invert_yaxis()
     colorbar_mod_ax.xaxis.set_visible(False)
     colorbar_mod_ax.yaxis.tick_right()
-    colorbar_arg_ax.set_title("$\phi$", y=-0.1)
+    colorbar_arg_ax.set_title(r"$\phi$", y=-0.1)
 
     colorbar_arg_ax.xaxis.set_visible(False)
     colorbar_arg_ax.yaxis.tick_right()
