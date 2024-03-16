@@ -1,64 +1,29 @@
 import unittest
-from pykato.plotfunction import fixed_layout, gridspec_layout, diagram
+from pykato.plotfunction import gridspec_layout, diagram
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import numpy as np
 
 
-class TestFixedLayout(unittest.TestCase):
-    def test_Plot_Layout(self):
-        figure = fixed_layout.Plot_Layout()
-        self.assertIsInstance(figure, Figure, "Figure not created by fixed_layout.Plot_Layout")
-
-        (plot_ax,) = figure.get_axes()
-        self.assertIsInstance(plot_ax, Axes, "plot_ax Axis not available in Figure created by fixed_layout.Plot_Layout")
-
-        figure.savefig("tests/output/fixed_layout_Plot_Layout.png")
-
-    def test_Image_Layout(self):
-        figure = fixed_layout.Image_Layout()
-        self.assertIsInstance(figure, Figure, "Figure not created by fixed_layout.Image_Layout")
+class TestGridSpecLayout(unittest.TestCase):
+    def test_Simple_Layout(self):
+        figure = gridspec_layout.Simple_Layout()
+        self.assertIsInstance(figure, Figure, "Figure not created by gridspec_layout.Simple_Layout")
 
         (imshow_ax,) = figure.get_axes()
-        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by fixed_layout.Image_Layout")
+        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by gridspec_layout.Simple_Layout")
 
-        figure.savefig("tests/output/fixed_layout_Image_Layout.png")
+        figure.savefig("tests/output/gridspec_layout_Simple_Layout.png")
 
-    def test_Image_Colorbar_Layout(self):
-        figure = fixed_layout.Image_Colorbar_Layout()
-        self.assertIsInstance(figure, Figure, "Figure not created by fixed_layout.Image_Colorbar_Layout")
+    def test_Image_Layout(self):
+        figure = gridspec_layout.Image_Layout()
+        self.assertIsInstance(figure, Figure, "Figure not created by gridspec_layout.Image_Layout")
 
-        imshow_ax, colorbar_ax = figure.get_axes()
-        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Layout")
-        self.assertIsInstance(colorbar_ax, Axes, "colorbar_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Layout")
+        (imshow_ax,) = figure.get_axes()
+        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by gridspec_layout.Image_Layout")
 
-        figure.savefig("tests/output/fixed_layout_Image_Colorbar_Layout.png")
+        figure.savefig("tests/output/gridspec_layout_Image_Layout.png")
 
-    def test_Image_Colorbar_Colorbar_Layout(self):
-        figure = fixed_layout.Image_Colorbar_Colorbar_Layout()
-        self.assertIsInstance(figure, Figure, "Figure not created by fixed_layout.Image_Colorbar_Colorbar_Layout")
-
-        imshow_ax, colorbar1_ax, colorbar2_ax = figure.get_axes()
-        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Colorbar_Layout")
-        self.assertIsInstance(colorbar1_ax, Axes, "colorbar1_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Colorbar_Layout")
-        self.assertIsInstance(colorbar2_ax, Axes, "colorbar2_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Colorbar_Layout")
-
-        figure.savefig("tests/output/fixed_layout_Image_Colorbar_Colorbar_Layout.png")
-
-    def test_Image_Colorbar_Image_Colorbar_Layout(self):
-        figure = fixed_layout.Image_Colorbar_Image_Colorbar_Layout()
-        self.assertIsInstance(figure, Figure, "Figure not created by fixed_layout.Image_Colorbar_Image_Colorbar_Layout")
-
-        imshow1_ax, colorbar1_ax, imshow2_ax, colorbar2_ax = figure.get_axes()
-        self.assertIsInstance(imshow1_ax, Axes, "imshow1_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Image_Colorbar_Layout")
-        self.assertIsInstance(colorbar1_ax, Axes, "colorbar1_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Image_Colorbar_Layout")
-        self.assertIsInstance(imshow2_ax, Axes, "imshow2_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Image_Colorbar_Layout")
-        self.assertIsInstance(colorbar2_ax, Axes, "colorbar2_ax Axis not available in Figure created by fixed_layout.Image_Colorbar_Image_Colorbar_Layout")
-
-        figure.savefig("tests/output/fixed_layout_Image_Colorbar_Image_Colorbar_Layout.png")
-
-
-class TestGridSpecLayout(unittest.TestCase):
     def test_Image_Colorbar_Layout(self):
         figure = gridspec_layout.Image_Colorbar_Layout()
         self.assertIsInstance(figure, Figure, "Figure not created by gridspec_layout.Image_Colorbar_Layout")
@@ -68,6 +33,17 @@ class TestGridSpecLayout(unittest.TestCase):
         self.assertIsInstance(colorbar_ax, Axes, "colorbar_ax Axis not available in Figure created by gridspec_layout.Image_Colorbar_Layout")
 
         figure.savefig("tests/output/gridspec_layout_Image_Colorbar_Layout.png")
+
+    def test_Image_Colorbar_Colorbar_Layout(self):
+        figure = gridspec_layout.Image_Colorbar_Colorbar_Layout()
+        self.assertIsInstance(figure, Figure, "Figure not created by gridspec_layout.Image_Colorbar_Colorbar_Layout")
+
+        imshow_ax, colorbar1_ax, colorbar2_ax = figure.get_axes()
+        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by gridspec_layout.Image_Colorbar_Colorbar_Layout")
+        self.assertIsInstance(colorbar1_ax, Axes, "colorbar_ax Axis not available in Figure created by gridspec_layout.Image_Colorbar_Colorbar_Layout")
+        self.assertIsInstance(colorbar2_ax, Axes, "colorbar_ax Axis not available in Figure created by gridspec_layout.Image_Colorbar_Colorbar_Layout")
+
+        figure.savefig("tests/output/gridspec_layout_Image_Colorbar_Colorbar_Layout.png")
 
 
 class TestDiagram(unittest.TestCase):
@@ -98,6 +74,7 @@ class TestDiagram(unittest.TestCase):
         data = np.zeros((200, 200))
 
         figure = diagram.Image_Colorbar_Diagram(data)
+        figure.resize(None)
         self.assertIsInstance(figure, Figure, "Figure not created by diagram.Image_Colorbar_Diagram")
 
         imshow_ax, colorbar_ax = figure.get_axes()
@@ -111,6 +88,7 @@ class TestDiagram(unittest.TestCase):
 
         figure = diagram.Image_Colorbar_Layout()
         figure = diagram.Image_Colorbar_Diagram(data)
+        figure.resize(None)
         self.assertIsInstance(figure, Figure, "Figure not created by diagram.Image_Colorbar_Diagram")
 
         imshow_ax, colorbar_ax = figure.get_axes()
@@ -123,6 +101,7 @@ class TestDiagram(unittest.TestCase):
         data = np.zeros((200, 200), dtype=np.complex64)
 
         figure = diagram.Complex_Diagram(data)
+        figure.resize(None)
         self.assertIsInstance(figure, Figure, "Figure not created by diagram.Complex_Diagram")
 
         imshow_ax, colorbar_mod_ax, colorbar_arg_ax = figure.get_axes()
@@ -137,6 +116,7 @@ class TestDiagram(unittest.TestCase):
 
         figure = diagram.Image_Colorbar_Colorbar_Layout()
         figure = diagram.Complex_Diagram(data)
+        figure.resize(None)
         self.assertIsInstance(figure, Figure, "Figure not created by diagram.Complex_Diagram")
 
         imshow_ax, colorbar_mod_ax, colorbar_arg_ax = figure.get_axes()
