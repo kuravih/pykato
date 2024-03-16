@@ -182,11 +182,6 @@ def dotf_probe(shape: Tuple[int, int], size: Tuple[int, int], direction: DOTFPro
     return box(shape, size, center)
 
 
-def howfs_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
-    xx, yy = generate_coordinates(shape)
-    return np.sinc(dξ * xx) * np.sinc(dη * yy) * np.sin(ξc * xx + θ)
-
-
 class EFCProbeDirection(Enum):
     HORIZONTAL = auto()
     VERTICAL = auto()
@@ -207,10 +202,15 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
     Returns : np.ndarray
         Image of the EFC probe pattern.
     """
+
+    def _efc_probe(_shape: Tuple[int, int], _dξ: float, _dη: float, _ξc: float, _θ: float) -> np.ndarray:
+        xx, yy = generate_coordinates(_shape)
+        return np.sinc(_dξ * xx) * np.sinc(_dη * yy) * np.sin(_ξc * xx + _θ)
+
     if direction == EFCProbeDirection.HORIZONTAL:
-        return howfs_probe(shape, dξ, dη, ξc, θ)
+        return _efc_probe(shape, dξ, dη, ξc, θ)
     else:
-        return np.rot90(howfs_probe(shape, dξ, dη, ξc, θ))
+        return np.rot90(_efc_probe(shape, dξ, dη, ξc, θ))
 
 
 def circle(shape: Tuple[int, int], radius: float, center: Tuple[float, float] = (0, 0)) -> np.ndarray:
@@ -295,7 +295,7 @@ def Gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width:
     return Gauss2d_fn((xx, yy), center, offset, height, width, tilt)
 
 
-def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[int, int], offset: Tuple[int, int] = (0, 0)) -> np.ndarray:
+def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], offset: Tuple[float, float] = (0, 0)) -> np.ndarray:
     """Create a polka dot pattern of 2d gaussian spots.
 
     Example :
@@ -314,10 +314,10 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[int, int], offse
     Returns : np.ndarray
         image of the dot pattern.
     """
-    image_width, image_height = shape
+    width, height = shape
     dot_h_spacing, dot_v_spacing = spacing
     dot_h_offset, dot_v_offset = offset
-    xs, ys = np.arange(0, image_width + dot_h_spacing, dot_h_spacing) - 0.5 + dot_h_offset, np.arange(0, image_height + dot_v_spacing, dot_v_spacing) - 0.5 + dot_v_offset
+    xs, ys = np.arange(0, width + dot_h_spacing, dot_h_spacing) - 0.5 + dot_h_offset, np.arange(0, height + dot_v_spacing, dot_v_spacing) - 0.5 + dot_v_offset
 
     spots = []
     for x in xs:
@@ -378,7 +378,7 @@ def Airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: f
     return Airy_fn((xx, yy), center, radius, height)
 
 
-def PSF_to_OTF(psf: np.ndarray) -> np.ndarray:
+def PSF_to_OTF(psf: np.ndarray, axes=None) -> np.ndarray:
     """Calculate the Optical Transfer Function (OTF) from a PSF
 
     Example :
@@ -391,8 +391,7 @@ def PSF_to_OTF(psf: np.ndarray) -> np.ndarray:
     Returns : np.ndarray
         Complex OTF image.
     """
-    otf = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psf)))
-    return otf
+    return np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psf, axes=axes), axes=axes), axes=axes)
 
 
 def hsort(_xy, ascend: bool = True):
@@ -416,3 +415,124 @@ def xy_sort(_xy, shape: Tuple[int, int], hascend: bool = True, vascend: bool = T
         vsorted_indices = vsort(_xy[_indices], vascend)
         indices.append(_indices[vsorted_indices])
     return np.array(indices).flatten()
+
+
+def Linear2d_fn(x, y, a, b, c):
+    return a * x + b * y + c
+
+
+def linear_2d_lsq_fit(data):
+    from scipy.optimize import curve_fit
+
+    def _linear_2d(M, a, b, c):
+        x, y = M
+        return Linear2d_fn(x, y, a, b, c)
+
+    mask = np.isnan(data)
+    x_coordinates, y_coordinates = generate_coordinates(data.shape, cartesian=True)
+    z_data = data.copy()
+    x_coordinates = np.ma.masked_array(x_coordinates, mask=mask)
+    y_coordinates = np.ma.masked_array(y_coordinates, mask=mask)
+    z_data = np.ma.masked_array(z_data, mask=mask)
+
+    xy_coordinates = np.vstack((x_coordinates.compressed().ravel(), y_coordinates.compressed().ravel()))
+    zdata = z_data.compressed()
+
+    guess_prms = [0, 0, 0]
+    popt, pcov = curve_fit(_linear_2d, xy_coordinates, zdata, guess_prms)
+    tip, tilt, piston = popt
+
+    return tip, tilt, piston
+
+
+def dphtf_to_command(_deltatf, _locations):
+    """Convert delta phase transfer function to a dm command
+
+    Example
+    -------
+        dm = DeformableMirror(34, shape='round')
+        act_coord_array_act = np.array(list(zip(dm.coordinates[0].compressed(), dm.coordinates[1].compressed())))
+        lmod_act_coord_array_px = tform(act_coord_array_act)
+        _ang_lmod_cmd = convert_to_command(unwrapped_masked_ang_lmod_dotf, lmod_act_coord_array_px)
+
+    Parameters
+    ----------
+        _deltatf : np.ndarray
+            Differential transfer function image
+        _locations :  np.ndarray (2, nact)
+          Actuator locations
+
+    Returns
+    -------
+        cmd : nd.ndarray (nact)
+            Actuator command
+
+    """
+    from scipy.interpolate import RegularGridInterpolator
+
+    grid_x, grid_y = np.arange(_deltatf.shape[0]), np.arange(_deltatf.shape[1])
+    surface_fn = RegularGridInterpolator((grid_x, grid_y), _deltatf)
+    cmd = np.zeros(_locations.shape[0])
+    for index, px in enumerate(_locations):
+        cmd[index] = surface_fn((px[0], px[1]))
+    return cmd - np.mean(cmd)
+
+
+def calculate_command(dotf_images, px_location_arrays):
+    command = np.full((180, 180), np.nan)
+    slm_circle = circle(command.shape, command.shape[0] / 2, (-command.shape[0] / 2, -command.shape[1] / 2))
+    commands = []
+    for index, (dotf_image, px_location_array) in enumerate(zip(dotf_images, px_location_arrays)):
+        command[slm_circle] = dphtf_to_command(np.angle(dotf_image), px_location_array)
+        if index == 0:
+            command[:, :22] = np.nan
+        elif index == 1:
+            command[:22, :] = np.nan
+        elif index == 2:
+            command[:, -22:] = np.nan
+        else:
+            command[-22:, :] = np.nan
+        commands.append(command.copy())
+
+    mean_command = np.nanmean(commands, axis=0)
+    tip, tilt, piston = linear_2d_lsq_fit(mean_command)
+    x_coordinates, y_coordinates = generate_coordinates(mean_command.shape, cartesian=True)
+
+    return mean_command - x_coordinates * tip - y_coordinates * tilt - piston
+
+
+# # =====================================================================================================================
+# def Fit2d(_z, _xy, _func, _guess):
+#   """ Fit an image to a 2d function
+
+#   Parameters
+#   ----------
+#     _z : array_like
+#       surface
+#     _xy : (array_like, array_like)
+#       x,y images of the same shape as z
+
+#   Returns
+#   -------
+#     popt : array
+#       dark subtracted averaged image
+#     pcov : 2-D array
+#       The estimated approximate covariance of popt.
+#   """
+
+#   from scipy.optimize import curve_fit
+
+#   xx, yy = _xy
+
+#   assert (xx.shape == yy.shape == _z.shape), 'x or y not same shape as z'
+
+#   def _fitFunc(M, *args):
+#     _x, _y = M
+#     return _func(_x, _y, *args)
+
+#   xdata = np.vstack((xx.ravel(), yy.ravel()))
+#   ydata = _z.ravel()
+#   popt, pcov = curve_fit(_fitFunc, xdata, ydata, _guess)
+
+#   return popt, pcov
+# # =====================================================================================================================

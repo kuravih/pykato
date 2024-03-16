@@ -25,7 +25,7 @@ class TestFunction(unittest.TestCase):
 
         mod = 0.5 + checkers((200, 200), (40, 40), (0, 40)) / 2
         data = mod * np.exp(1j * arg)
-        figure = diagram.Complex_Diagram(data, modLim=(0, 1), gap=(21.0, 50.0))
+        figure = diagram.Complex_Diagram(data)
         figure.savefig("tests/output/function_vortex.png")
 
     def test_box(self):
