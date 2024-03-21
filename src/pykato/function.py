@@ -448,19 +448,12 @@ def linear_2d_lsq_fit(data):
 def dphtf_to_command(_deltatf, _locations):
     """Convert delta phase transfer function to a dm command
 
-    Example
-    -------
-        dm = DeformableMirror(34, shape='round')
-        act_coord_array_act = np.array(list(zip(dm.coordinates[0].compressed(), dm.coordinates[1].compressed())))
-        lmod_act_coord_array_px = tform(act_coord_array_act)
-        _ang_lmod_cmd = convert_to_command(unwrapped_masked_ang_lmod_dotf, lmod_act_coord_array_px)
-
     Parameters
     ----------
         _deltatf : np.ndarray
             Differential transfer function image
         _locations :  np.ndarray (2, nact)
-          Actuator locations
+            Actuator locations
 
     Returns
     -------
@@ -475,7 +468,7 @@ def dphtf_to_command(_deltatf, _locations):
     cmd = np.zeros(_locations.shape[0])
     for index, px in enumerate(_locations):
         cmd[index] = surface_fn((px[0], px[1]))
-    return cmd - np.mean(cmd)
+    return cmd - np.nanmean(cmd)
 
 
 def calculate_command(dotf_images, px_location_arrays):
