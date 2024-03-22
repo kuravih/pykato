@@ -471,9 +471,9 @@ def dphtf_to_command(_deltatf, _locations):
     return cmd - np.nanmean(cmd)
 
 
-def calculate_command(dotf_images, px_location_arrays):
-    command = np.full((180, 180), np.nan)
-    slm_circle = circle(command.shape, command.shape[0] / 2, (-command.shape[0] / 2, -command.shape[1] / 2))
+def calculate_command(shape, dotf_images, px_location_arrays):
+    command = np.full(shape, np.nan)
+    slm_circle = circle(shape, shape[0] / 2, (-shape[0] / 2, -shape[1] / 2))
     commands = []
     for index, (dotf_image, px_location_array) in enumerate(zip(dotf_images, px_location_arrays)):
         command[slm_circle] = dphtf_to_command(np.angle(dotf_image), px_location_array)
