@@ -49,6 +49,26 @@ def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (
         return xx, yy, rr, θθ
 
 
+def gradient(shape: Tuple[int, int], angle: float) -> np.ndarray:
+    """Create a gradient pattern image. gradient is clamped [-1, 1]
+
+    Example :
+        image_checkers = gradient((200,200), 45)
+
+    Parameters :
+        shape : Tuple[int, int]
+            Image shape.
+        angle : float
+            Angle of the gradient in degrees
+
+    Returns : np.ndarray
+        Image of the gradient pattern.
+    """
+    xx, yy = generate_coordinates(shape, cartesian=True)
+    grad = xx * np.cos(np.deg2rad(angle)) + yy * np.sin(np.deg2rad(angle))
+    return (grad - np.nanmin(grad)) / (np.nanmax(grad) - np.nanmin(grad))
+
+
 def checkers(shape: Tuple[int, int], size: Tuple[int, int], offset: Tuple[int, int] = (0, 0)) -> np.ndarray:
     """Create a checker pattern image.
 
@@ -94,10 +114,11 @@ def sinusoid(shape: Tuple[int, int], period: float, phase: float, angle: float) 
 
     Returns : np.ndarray
         Image of the sinusoidal pattern.
+        The mean is 0.0 and the amplitude is 1.0 (i.e min = -1.0, max = +1.0)
     """
     xx, yy = generate_coordinates(shape, cartesian=True)
     pp = (2 * np.pi * (xx * np.cos(np.deg2rad(angle)) + yy * np.sin(np.deg2rad(angle)))) / period
-    return (np.sin(pp + np.deg2rad(phase)) + 1) / 2
+    return np.sin(pp + np.deg2rad(phase))
 
 
 def vortex(shape: Tuple[int, int], charge: int) -> np.ndarray:
@@ -194,19 +215,31 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
     """Create a EFC probe pattern image.
 
     Example :
-        TODO:
+        image_efc_probe = efc_probe((200,200), 0.01, 0.01, 90, 0, EFCProbeDirection.HORIZONTAL) 
 
     Parameters :
-        TODO:
+        shape : Tuple[int, int]
+            Image shape.
+        dξ : float
+            Probe rectangle size in (along the EFCProbeDirection).
+        dη : float
+            Probe rectangle size in (perpendicular to the EFCProbeDirection).
+        ξc : float
+            Period of the sinusoid (along the EFCProbeDirection).
+        θ : float
+            Phase of the sinusoid (along the EFCProbeDirection) in degrees.
 
     Returns : np.ndarray
         Image of the EFC probe pattern.
     """
 
     def _efc_probe(_shape: Tuple[int, int], _dξ: float, _dη: float, _ξc: float, _θ: float) -> np.ndarray:
-        xx, yy = generate_coordinates(_shape)
-        return np.sinc(_dξ * xx) * np.sinc(_dη * yy) * np.sin(_ξc * xx + _θ)
-
+        xx, yy = generate_coordinates(_shape, cartesian=True, offset=(-_shape[0]/2+0.5, -_shape[1]/2+0.5))
+        _2pixx = 2 * np.pi * xx
+        _2piyy = 2 * np.pi * yy
+        _invξc_2pixx = (1/_ξc) * _2pixx
+        return (np.sinc(_dξ * _2pixx) * np.sinc(_dη * _2piyy) * np.sin(_invξc_2pixx + np.deg2rad(_θ)) + 1) / 2
+    
     if direction == EFCProbeDirection.HORIZONTAL:
         return _efc_probe(shape, dξ, dη, ξc, θ)
     else:
@@ -491,7 +524,7 @@ def calculate_command(shape, dotf_images, px_location_arrays):
     tip, tilt, piston = linear_2d_lsq_fit(mean_command)
     x_coordinates, y_coordinates = generate_coordinates(mean_command.shape, cartesian=True)
 
-    return mean_command - x_coordinates * tip - y_coordinates * tilt - piston
+    return mean_command - (x_coordinates * tip) - (y_coordinates * tilt) - piston
 
 
 # # =====================================================================================================================

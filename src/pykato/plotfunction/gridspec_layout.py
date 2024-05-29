@@ -30,7 +30,7 @@ def GridSpec_Layout(*args, aspect_ratios: Optional[Tuple[float, ...]] = None, **
     Parameters
     ----------
         aspect_ratios: Optional[Tuple[float, ...]]
-            Aspect ratios for the exes
+            Aspect ratios for the exes.
         Other: matplotlib.gridspec.GridSpec parameters
             https://matplotlib.org/stable/api/_as_gen/matplotlib.gridspec.GridSpec.html
 
