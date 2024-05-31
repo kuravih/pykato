@@ -250,7 +250,7 @@ def circle(shape: Tuple[int, int], radius: float, center: Tuple[float, float] = 
     """Create a circle pattern image.
 
     Example :
-        image_circle = box((200,200), 50, (100,100))
+        image_circle = circle((200,200), 50, (100,100))
 
     Parameters :
         shape : Tuple[int, int]

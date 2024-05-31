@@ -87,7 +87,7 @@ class TestGridSpecLayout(unittest.TestCase):
         fourimages_twocolorbars_layout_figure.savefig("tests/output/test_Images_TwoColorbars_Layout.png")
 
 
-class BaseTestPrest(unittest.TestCase):
+class BaseTestPreset(unittest.TestCase):
     def setUp(self):
         polka_test_image = polka((100, 100), 4, (20, 20), (-10, -10))
         checkers_test_image = checkers((100, 100), (25, 25), (-12.5, 12.5))
@@ -101,7 +101,7 @@ class BaseTestPrest(unittest.TestCase):
         self.data = {"polka_test_image": polka_test_image, "checkers_test_image": checkers_test_image, "sinusoid_test_image": sinusoid_test_image, "gauss_test_image": gauss_test_image, "vortex_test_image": vortex_test_image, "polka_vortex_complex_test_image": polka_vortex_complex_test_image, "checkers_vortex_complex_test_image": checkers_vortex_complex_test_image, "sinusoid_vortex_complex_test_image": sinusoid_vortex_complex_test_image, "gauss_vortex_complex_test_image": gauss_vortex_complex_test_image}
 
 
-class TestPreset(BaseTestPrest):
+class TestPreset(BaseTestPreset):
     def test_Imshow_Colorbar_Preset(self):
         imshow_colorbar_preset = Imshow_Colorbar_Preset(self.data["polka_test_image"])
         imshow_colorbar_preset.get_image().set_clim(0, 1)
