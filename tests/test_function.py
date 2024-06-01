@@ -143,12 +143,12 @@ class TestFunction(unittest.TestCase):
         (fit_a, fit_b, fit_c), _ = LeastSquareFit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=x)
 
         for val, fit_val in zip((a, b, c), (fit_a, fit_b, fit_c)):
-            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="width estimation not accurate")
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
 
         fit_data = fit_quadratic_fn(x, fit_a, fit_b, fit_c)
 
         for val, fit_val in zip(data, fit_data):
-            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="width estimation not accurate")
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="fit estimation not accurate")
 
     def test_LeastSquareFit_Sinusoid(self):
         def fit_sinusoid_fn(x, a, b, c, d):
@@ -161,9 +161,9 @@ class TestFunction(unittest.TestCase):
         (fit_a, fit_b, fit_c, fit_d), _ = LeastSquareFit(data, fit_sinusoid_fn, guess_prms=(0.26, -1.1, 2.6, 1.1), x_coord=x)
 
         for val, fit_val in zip((a, b, c, d), (fit_a, fit_b, fit_c, fit_d)):
-            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="width estimation not accurate")
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
 
         fit_data = fit_sinusoid_fn(x, fit_a, fit_b, fit_c, fit_d)
 
         for val, fit_val in zip(data, fit_data):
-            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="width estimation not accurate")
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="fit estimation not accurate")
