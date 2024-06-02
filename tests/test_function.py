@@ -55,7 +55,7 @@ class TestFunction(unittest.TestCase):
         data = airy((200, 200), center=(100, 100), radius=0.25, height=100)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.Airy()")
 
-        figure = preset.Imshow_Preset(np.log10(data/np.max(data)))
+        figure = preset.Imshow_Preset(np.log10(data / np.max(data)))
         figure.savefig("tests/output/function_airy.png")
 
     def test_polka(self):
@@ -140,13 +140,12 @@ class TestFunction(unittest.TestCase):
         log_error = np.log10(error)
         figure = GridSpec_Layout(1, 1)
         (imshow_ax,) = figure.get_axes()
-        imshow_ax.plot(x, log_error, '+', markersize=10)
+        imshow_ax.plot(x, log_error, "+", markersize=10)
         imshow_ax.set_ylim(-16, -15)
-        imshow_ax.set_ylabel('error')
+        imshow_ax.set_ylabel("error")
         imshow_ax.set_xlim(0, 10)
-        imshow_ax.set_xlabel('x')
+        imshow_ax.set_xlabel("x")
         figure.savefig("tests/output/test_least_squares_fit_quadratic.png")
-
 
     def test_least_squares_fit_sinusoid(self):
         def fit_sinusoid_fn(x, a, b, c, d):
@@ -170,9 +169,9 @@ class TestFunction(unittest.TestCase):
         log_error = np.log10(error)
         figure = GridSpec_Layout(1, 1)
         (imshow_ax,) = figure.get_axes()
-        imshow_ax.plot(x, log_error, '+', markersize=10)
+        imshow_ax.plot(x, log_error, "+", markersize=10)
         imshow_ax.set_ylim(-16, -15)
-        imshow_ax.set_ylabel('error')
+        imshow_ax.set_ylabel("error")
         imshow_ax.set_xlim(0, 10)
-        imshow_ax.set_xlabel('x')
+        imshow_ax.set_xlabel("x")
         figure.savefig("tests/output/least_squares_fit_sinusoid.png")
