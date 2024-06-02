@@ -1,7 +1,11 @@
 from typing import Tuple
 from enum import Enum, IntEnum, auto
+
 import numpy as np
 
+from scipy.interpolate import RegularGridInterpolator
+from scipy.optimize import curve_fit
+from scipy import special
 
 def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (0, 0), cartesian: bool = False, polar: bool = False) -> Tuple[np.ndarray, ...]:
     """Create coordinate grids.
@@ -233,12 +237,12 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         Image of the EFC probe pattern.
     """
 
-    def _efc_probe(_shape: Tuple[int, int], _dξ: float, _dη: float, _ξc: float, _θ: float) -> np.ndarray:
-        xx, yy = generate_coordinates(_shape, cartesian=True, offset=(-_shape[0] / 2 + 0.5, -_shape[1] / 2 + 0.5))
-        _2pixx = 2 * np.pi * xx
-        _2piyy = 2 * np.pi * yy
-        _invξc_2pixx = (1 / _ξc) * _2pixx
-        return (np.sinc(_dξ * _2pixx) * np.sinc(_dη * _2piyy) * np.sin(_invξc_2pixx + np.deg2rad(_θ)) + 1) / 2
+    def _efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
+        xx, yy = generate_coordinates(shape, cartesian=True, offset=(-shape[0] / 2 + 0.5, -shape[1] / 2 + 0.5))
+        _2pi_xx = 2 * np.pi * xx
+        _2pi_yy = 2 * np.pi * yy
+        _invξc_2pi_xx = (1 / ξc) * _2pi_xx
+        return (np.sinc(dξ * _2pi_xx) * np.sinc(dη * _2pi_yy) * np.sin(_invξc_2pi_xx + np.deg2rad(θ)) + 1) / 2
 
     if direction == EFCProbeDirection.HORIZONTAL:
         return _efc_probe(shape, dξ, dη, ξc, θ)
@@ -264,18 +268,18 @@ def circle(shape: Tuple[int, int], radius: float, center: Tuple[float, float] = 
         Image of the circle pattern.
     """
     circle_x_center, circle_y_center = center
-    xx, yy, rr, __ = generate_coordinates(shape, (0.5 + circle_x_center, 0.5 + circle_y_center), True, True)
+    rr, _ = generate_coordinates(shape, (0.5 + circle_x_center, 0.5 + circle_y_center), polar=True)
     return rr < radius
 
 
-def Gauss2d_fn(xxyy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], offset: float, height: float, width: Tuple[float, float], tilt: float = 0):
+def gauss2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], offset: float, height: float, width: Tuple[float, float], tilt: float = 0):
     """2d gaussian function (used for fitting).
 
     Example :
         image_gauss = Gauss2d_fn(TODO: example)
 
     Parameters :
-        xxyy : Tuple[np.ndarray, np.ndarray]
+        xx_yy : Tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
         center : Tuple[float, float]
             Gaussian center coordinates.
@@ -291,7 +295,7 @@ def Gauss2d_fn(xxyy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float],
     Returns : np.ndarray
             image of the gaussian.
     """
-    xx, yy = xxyy
+    xx, yy = xx_yy
     x0, y0 = center
     u, v = width
     tilt = np.deg2rad(tilt)
@@ -301,7 +305,7 @@ def Gauss2d_fn(xxyy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float],
     return offset + height * np.exp(-(_a * (xx - x0) ** 2 + 2 * _b * (xx - x0) * (yy - y0) + _c * (yy - y0) ** 2))
 
 
-def Gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width: Tuple[float, float] = (3, 3), center: Tuple[float, float] = (0, 0), tilt: float = 0):
+def gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width: Tuple[float, float] = (3, 3), center: Tuple[float, float] = (0, 0), tilt: float = 0):
     """Create a 2d gauss image.
 
     Example :
@@ -325,7 +329,7 @@ def Gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width:
         image of the gaussian.
     """
     xx, yy = generate_coordinates(shape, cartesian=True)
-    return Gauss2d_fn((xx, yy), center, offset, height, width, tilt)
+    return gauss2d_fn((xx, yy), center, offset, height, width, tilt)
 
 
 def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], offset: Tuple[float, float] = (0, 0)) -> np.ndarray:
@@ -355,19 +359,19 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], o
     spots = []
     for x in xs:
         for y in ys:
-            spots.append(Gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
+            spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
 
     return np.sum(spots, axis=0)
 
 
-def Airy_fn(xxyy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], radius: float, height: float):
+def airy_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], radius: float, height: float):
     """2d airy function (used for fitting).
 
     Example :
         image_airy = Airy_fn(TODO: example)
 
     Parameters :
-        xxyy : Tuple[np.ndarray, np.ndarray]
+        xx_yy : Tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
         center : Tuple[float, float]
             Gaussian center coordinates.
@@ -380,15 +384,13 @@ def Airy_fn(xxyy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], ra
         Image of the airy function.
     """
 
-    from scipy import special
-
-    xx, yy = xxyy
+    xx, yy = xx_yy
     x0, y0 = center
     r = radius * np.hypot((xx - x0), (yy - y0))
     return height * np.where(r, (2 * special.jv(1, r) / r) ** 2, 1)
 
 
-def Airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: float = 1, height: float = 1):
+def airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: float = 1, height: float = 1):
     """Create a 2d Airy disk
 
     Example :
@@ -408,17 +410,17 @@ def Airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: f
         Image of the Airy disk.
     """
     xx, yy = generate_coordinates(shape, cartesian=True)
-    return Airy_fn((xx, yy), center, radius, height)
+    return airy_fn((xx, yy), center, radius, height)
 
 
-def Linear2d_fn(xxyy: Tuple[np.ndarray, np.ndarray], a: float, b: float, c: float):
+def linear2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], a: float, b: float, c: float):
     """2d plane function (used for fitting).
 
     Example :
         image_airy = Linear2d_fn(TODO: example)
 
     Parameters :
-        xxyy : Tuple[np.ndarray, np.ndarray]
+        xx_yy : Tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
         a : float
             Constant.
@@ -431,11 +433,11 @@ def Linear2d_fn(xxyy: Tuple[np.ndarray, np.ndarray], a: float, b: float, c: floa
         Image of the plane.
     """
 
-    xx, yy = xxyy
+    xx, yy = xx_yy
     return a * xx + b * yy + c
 
 
-def Linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
+def linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
     """Create a 2d plane
 
     Example :
@@ -455,10 +457,10 @@ def Linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
         Image of the plane.
     """
     xx, yy = generate_coordinates(shape, cartesian=True)
-    return Linear2d_fn((xx, yy), a, b, c)
+    return linear2d_fn((xx, yy), a, b, c)
 
 
-def LeastSquareFit(y_data, model, guess_prms=None, x_coord=None, mask=None):
+def least_squares_fit(y_data, model, guess_prms=None, x_coord=None, mask=None):
     """Fit a function to an array of values
 
     Example :
@@ -468,7 +470,7 @@ def LeastSquareFit(y_data, model, guess_prms=None, x_coord=None, mask=None):
         a, b, c = 0.25, -1, 2.5
         data = fit_quadratic_fn(np.linspace(0, 10, 21), a, b, c)
 
-        LeastSquareFit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=np.linspace(0, 10, 21))
+        least_squares_fit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=np.linspace(0, 10, 21))
 
     Parameters :
         y_data : np.ndarray
@@ -489,37 +491,35 @@ def LeastSquareFit(y_data, model, guess_prms=None, x_coord=None, mask=None):
         goodness of fit
     """
 
-    from scipy.optimize import curve_fit
-
     if mask is None:
         mask = np.isnan(y_data)
 
     if x_coord is None:
-        x_coord = np.linspace(0, data.shape[0], data.shape[0], endpoint=False)
+        x_coord = np.linspace(0, y_data.shape[0], y_data.shape[0], endpoint=False)
 
-    _y_data = np.ma.masked_array(y_data, mask=mask)
-    _x_coord = np.ma.masked_array(x_coord, mask=mask)
+    y_fit = np.ma.masked_array(y_data, mask=mask)
+    x_fit = np.ma.masked_array(x_coord, mask=mask)
 
-    return curve_fit(model, _x_coord, _y_data, guess_prms)
+    return curve_fit(model, x_fit, y_fit, guess_prms)
 
 
-def LeastSquareFit2d(z_data, model, guess_prms=None, xy_coords=None, mask=None):
+def least_squares_fit_2d(z_data, model, guess_prms=None, xy_coords=None, mask=None):
     """Fit a 2d function to an 2d array of values
 
     Example :
         linear2d_data = Linear2d((200, 200), 3, 2, 1)
-        (tip, tilt, piston), __ = leastSquareFit2d(linear2d_data, Linear2d_fn)
+        (tip, tilt, piston), __ = least_squares_fit_2d(linear2d_data, Linear2d_fn)
 
         gauss2d_data = Gauss2d((200, 200), offset=0, height=1, width=(3, 3), center=(100, 100), tilt=0)
-        def fit_Gauss2d_fn(xxyy, center_x, center_y, offset, height, width_x, width_y):
-            return Gauss2d_fn(xxyy, (center_x, center_y), offset, height, (width_x, width_y))
-        (center_x, center_y, offset, height, width_x, width_y), _ = leastSquareFit2d(gauss2d_data, fit_Gauss2d_fn, guess_prms=(101,101, 0, 1.1, 3.3, 3))
+        def fit_Gauss2d_fn(xx_yy, center_x, center_y, offset, height, width_x, width_y):
+            return Gauss2d_fn(xx_yy, (center_x, center_y), offset, height, (width_x, width_y))
+        (center_x, center_y, offset, height, width_x, width_y), _ = least_squares_fit_2d(gauss2d_data, fit_Gauss2d_fn, guess_prms=(101,101, 0, 1.1, 3.3, 3))
         print(center_x, center_y, offset, height, width_x, width_y)
 
     Parameters :
         z_data : np.ndarray
             2d Array of values to fit.
-        model : function(xxyy:Tuple[np.ndarray, np.ndarray], ...)
+        model : function(xx_yy:Tuple[np.ndarray, np.ndarray], ...)
             Fit function.
             The first parameter must be Tuple[np.ndarray, np.ndarray]
             The rest of the parameters must not be tuples.
@@ -535,8 +535,6 @@ def LeastSquareFit2d(z_data, model, guess_prms=None, xy_coords=None, mask=None):
         goodness of fit
     """
 
-    from scipy.optimize import curve_fit
-
     if mask is None:
         mask = np.isnan(z_data)
 
@@ -545,17 +543,17 @@ def LeastSquareFit2d(z_data, model, guess_prms=None, xy_coords=None, mask=None):
     else:
         x_coord, y_coord = xy_coords
 
-    _z_data = np.ma.masked_array(z_data, mask=mask)
-    _x_coord = np.ma.masked_array(x_coord, mask=mask)
-    _y_coord = np.ma.masked_array(y_coord, mask=mask)
+    z_masked = np.ma.masked_array(z_data, mask=mask)
+    x_masked = np.ma.masked_array(x_coord, mask=mask)
+    y_masked = np.ma.masked_array(y_coord, mask=mask)
 
-    __xy_coord = np.vstack((_x_coord.compressed().ravel(), _y_coord.compressed().ravel()))
-    __z_data = _z_data.compressed()
+    xy_fit = np.vstack((x_masked.compressed().ravel(), y_masked.compressed().ravel()))
+    z_fit = z_masked.compressed()
 
-    return curve_fit(model, __xy_coord, __z_data, guess_prms)
+    return curve_fit(model, xy_fit, z_fit, guess_prms)
 
 
-def PSF_to_OTF(psf: np.ndarray, axes=None) -> np.ndarray:
+def psf_to_otf(psf: np.ndarray, axes=None) -> np.ndarray:
     """Calculate the Optical Transfer Function (OTF) from a PSF
 
     Example :
@@ -571,51 +569,49 @@ def PSF_to_OTF(psf: np.ndarray, axes=None) -> np.ndarray:
     return np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(psf, axes=axes), axes=axes), axes=axes)
 
 
-def hsort(_xy, ascend: bool = True):
+def h_sort(x_y, ascend: bool = True):
     if ascend:
-        return np.argsort((_xy[:, 0]))
+        return np.argsort((x_y[:, 0]))
     else:
-        return np.flip(np.argsort((_xy[:, 0])))
+        return np.flip(np.argsort((x_y[:, 0])))
 
 
-def vsort(_xy, ascend: bool = True):
+def v_sort(x_y, ascend: bool = True):
     if ascend:
-        return np.argsort((_xy[:, 1]))
+        return np.argsort((x_y[:, 1]))
     else:
-        return np.flip(np.argsort((_xy[:, 1])))
+        return np.flip(np.argsort((x_y[:, 1])))
 
 
-def xy_sort(_xy, shape: Tuple[int, int], hascend: bool = True, vascend: bool = True):
+def xy_sort(x_y, shape: Tuple[int, int], h_ascend: bool = True, v_ascend: bool = True):
     indices = []
-    hsorted_indices = np.reshape(hsort(_xy, hascend), shape)
-    for _indices in hsorted_indices:
-        vsorted_indices = vsort(_xy[_indices], vascend)
-        indices.append(_indices[vsorted_indices])
+    h_sorted_indices = np.reshape(h_sort(x_y, h_ascend), shape)
+    for indices in h_sorted_indices:
+        v_sorted_indices = v_sort(x_y[indices], v_ascend)
+        indices.append(indices[v_sorted_indices])
     return np.array(indices).flatten()
 
 
-def dphtf_to_command(_deltatf, _locations):
+def dphtf_to_command(delta_tf, locations):
     """Convert delta phase transfer function to a dm command
 
     Parameters
     ----------
-        _deltatf : np.ndarray
+        delta_tf : np.ndarray
             Differential transfer function image
-        _locations :  np.ndarray (2, nact)
+        locations :  np.ndarray (2, n_actuators)
             Actuator locations
 
     Returns
     -------
-        cmd : nd.ndarray (nact)
+        cmd : nd.ndarray (n_actuators)
             Actuator command
 
     """
-    from scipy.interpolate import RegularGridInterpolator
-
-    grid_x, grid_y = np.arange(_deltatf.shape[0]), np.arange(_deltatf.shape[1])
-    surface_fn = RegularGridInterpolator((grid_x, grid_y), _deltatf)
-    cmd = np.zeros(_locations.shape[0])
-    for index, px in enumerate(_locations):
+    grid_x, grid_y = np.arange(delta_tf.shape[0]), np.arange(delta_tf.shape[1])
+    surface_fn = RegularGridInterpolator((grid_x, grid_y), delta_tf)
+    cmd = np.zeros(locations.shape[0])
+    for index, px in enumerate(locations):
         cmd[index] = surface_fn((px[0], px[1]))
     return cmd - np.nanmean(cmd)
 
@@ -637,7 +633,7 @@ def calculate_command(shape, dotf_images, px_location_arrays):
         commands.append(command.copy())
 
     mean_command = np.nanmean(commands, axis=0)
-    tip, tilt, piston = linear_2d_lsq_fit(mean_command)
+    (tip, tilt, piston), _, _, _, _ = least_squares_fit_2d(mean_command, linear2d_fn)
     x_coordinates, y_coordinates = generate_coordinates(mean_command.shape, cartesian=True)
 
     return mean_command - (x_coordinates * tip) - (y_coordinates * tilt) - piston
