@@ -460,7 +460,7 @@ def linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
     return linear2d_fn((xx, yy), a, b, c)
 
 
-def least_squares_fit(y_data, model, guess_prms=None, x_coord=None, mask=None):
+def least_squares_fit(y_data, model, guess_prms=None, bounds=(-np.inf, np.inf), x_coord=None, mask=None):
     """Fit a function to an array of values
 
     Example :
@@ -481,6 +481,8 @@ def least_squares_fit(y_data, model, guess_prms=None, x_coord=None, mask=None):
             The rest of the parameters must not be tuples.
         guess_prms : Tuple[...]
             guess parameters
+        bounds : Tuple[List[...],List[...]]
+            guess parameters. a tuple of two lists one upper and the other lower bounds
         x_coord : np.ndarray
             x coordinates of the data set
         mask : np.ndarray
@@ -500,10 +502,10 @@ def least_squares_fit(y_data, model, guess_prms=None, x_coord=None, mask=None):
     y_fit = np.ma.masked_array(y_data, mask=mask)
     x_fit = np.ma.masked_array(x_coord, mask=mask)
 
-    return curve_fit(model, x_fit, y_fit, guess_prms)
+    return curve_fit(model, x_fit, y_fit, p0=guess_prms, bounds=bounds)
 
 
-def least_squares_fit_2d(z_data, model, guess_prms=None, xy_coords=None, mask=None):
+def least_squares_fit_2d(z_data, model, guess_prms=None, bounds=(-np.inf, np.inf), xy_coords=None, mask=None):
     """Fit a 2d function to an 2d array of values
 
     Example :
@@ -525,6 +527,8 @@ def least_squares_fit_2d(z_data, model, guess_prms=None, xy_coords=None, mask=No
             The rest of the parameters must not be tuples.
         guess_prms : Tuple[...]
             guess parameters
+        bounds : Tuple[List[...],List[...]]
+            guess parameters. a tuple of two lists one upper and the other lower bounds
         xy_coords : Tuple[np.ndarray, np.ndarray]
             xy coordinates of the data set
         mask : np.ndarray
@@ -550,7 +554,7 @@ def least_squares_fit_2d(z_data, model, guess_prms=None, xy_coords=None, mask=No
     xy_fit = np.vstack((x_masked.compressed().ravel(), y_masked.compressed().ravel()))
     z_fit = z_masked.compressed()
 
-    return curve_fit(model, xy_fit, z_fit, guess_prms)
+    return curve_fit(model, xy_fit, z_fit, p0=guess_prms, bounds=bounds)
 
 
 def psf_to_otf(psf: np.ndarray, axes=None) -> np.ndarray:
@@ -599,12 +603,12 @@ def dphtf_to_command(delta_tf, locations):
     ----------
         delta_tf : np.ndarray
             Differential transfer function image
-        locations :  np.ndarray (2, n_actuators)
+        locations :  np.ndarray (2, n_acts)
             Actuator locations
 
     Returns
     -------
-        cmd : nd.ndarray (n_actuators)
+        cmd : nd.ndarray (n_acts)
             Actuator command
 
     """

@@ -6,6 +6,8 @@ import numpy as np
 
 
 class TestFunction(unittest.TestCase):
+    # pylint: disable=missing-class-docstring
+
     def test_checkers(self):
         data = checkers((100, 100), (25, 25), (-12.5, 12.5))
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.checkers()")
@@ -79,7 +81,7 @@ class TestFunction(unittest.TestCase):
         def fit_gauss_2d_fn(xx_yy, cx, cy, o, h, wx, wy):
             return gauss2d_fn(xx_yy, (cx, cy), o, h, (wx, wy))
 
-        (cx, cy, fit_offset, fit_height, wx, wy), _ = least_squares_fit_2d(gauss2d_data, fit_gauss_2d_fn, guess_prms=(101, 101, 0, 1.1, 25.5, 25.5))
+        (cx, cy, fit_offset, fit_height, wx, wy), _ = least_squares_fit_2d(gauss2d_data, fit_gauss_2d_fn, guess_prms=(101, 101, 0, 1.1, 25.5, 25.5)) # pylint: disable=unbalanced-tuple-unpacking
         fit_center = (cx, cy)
         fit_width = (wx, wy)
 
@@ -104,7 +106,7 @@ class TestFunction(unittest.TestCase):
         x_coord, y_coord = generate_coordinates((200, 200), (-10, -10), cartesian=True)
         linear2d_data = linear2d_fn((x_coord, y_coord), a, b, c)
 
-        (fit_a, fit_b, fit_c), _ = least_squares_fit_2d(linear2d_data, linear2d_fn, xy_coords=(x_coord, y_coord), guess_prms=(3.3, 2.2, 1.1))
+        (fit_a, fit_b, fit_c), _ = least_squares_fit_2d(linear2d_data, linear2d_fn, xy_coords=(x_coord, y_coord), guess_prms=(3.3, 2.2, 1.1)) # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((a, b, c), (fit_a, fit_b, fit_c)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
@@ -118,6 +120,36 @@ class TestFunction(unittest.TestCase):
         figure.get_cbar_ax().set_ylabel("Error")
         figure.savefig("tests/output/delta_least_squares_fit_2d_linear2d.png")
 
+    def test_least_squares_fit_linear(self):
+        def fit_linear_fn(x, m, c):
+            return m * x + c
+
+        x = np.linspace(0, 10, 21)
+        m, c = 0.25, -1
+        data = fit_linear_fn(x, m, c)
+
+        (fit_m, fit_c), _ = least_squares_fit(data, fit_linear_fn, guess_prms=(0.26, -1.1), x_coord=x) # pylint: disable=unbalanced-tuple-unpacking
+
+        for val, fit_val in zip((m, c), (fit_m, fit_c)):
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
+
+        fit_data = fit_linear_fn(x, fit_m, fit_c)
+
+        for val, fit_val in zip(data, fit_data):
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="fit estimation not accurate")
+
+        error = np.abs(data - fit_data)
+        log_error = np.log10(error)
+        figure = GridSpec_Layout(1, 1)
+        (imshow_ax,) = figure.get_axes()
+        imshow_ax.plot(x, log_error, "+", markersize=10)
+        imshow_ax.set_ylim(-16, -15)
+        imshow_ax.set_ylabel("error")
+        imshow_ax.set_xlim(0, 10)
+        imshow_ax.set_xlabel("x")
+        figure.savefig("tests/output/test_least_squares_fit_linear.png")
+
+
     def test_least_squares_fit_quadratic(self):
         def fit_quadratic_fn(x, a, b, c):
             return a * x * x + b * x + c
@@ -126,7 +158,7 @@ class TestFunction(unittest.TestCase):
         a, b, c = 0.25, -1, 2.5
         data = fit_quadratic_fn(x, a, b, c)
 
-        (fit_a, fit_b, fit_c), _ = least_squares_fit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=x)
+        (fit_a, fit_b, fit_c), _ = least_squares_fit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=x) # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((a, b, c), (fit_a, fit_b, fit_c)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
@@ -155,7 +187,7 @@ class TestFunction(unittest.TestCase):
         a, b, c, d = 0.25, -1, 2.5, 1
         data = fit_sinusoid_fn(x, a, b, c, d)
 
-        (fit_a, fit_b, fit_c, fit_d), _ = least_squares_fit(data, fit_sinusoid_fn, guess_prms=(0.26, -1.1, 2.6, 1.1), x_coord=x)
+        (fit_a, fit_b, fit_c, fit_d), _ = least_squares_fit(data, fit_sinusoid_fn, guess_prms=(0.26, -1.1, 2.6, 1.1), x_coord=x) # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((a, b, c, d), (fit_a, fit_b, fit_c, fit_d)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
