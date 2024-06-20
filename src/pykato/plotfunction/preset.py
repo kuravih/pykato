@@ -6,6 +6,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable, ImageGrid
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
+from matplotlib.colors import Normalize
+from matplotlib.colorbar import ColorbarBase
+from matplotlib import colormaps
 
 
 def Imshow_Preset(data: np.ndarray, figure: Optional[Figure] = None) -> Figure:
@@ -234,7 +237,7 @@ def Complex_Imshow_TwoColorbars_Preset(zdata: np.ndarray, figure: Optional[Figur
         figure.get_image() : AxesImage
             Get imshow image.
 
-        figure.get_image().set_dat(zdata)
+        figure.get_image().set_data(zdata)
             Get imshow image.
 
         figure.get_image().set_extent((xmin, xmax, ymin, ymax))
@@ -329,8 +332,8 @@ def ImageGrid_Preset(data: Tuple[np.ndarray], figure: Optional[Figure] = None) -
 
     imshow_axes = ImageGrid(figure, 111, nrows_ncols=(1, len(data)), axes_pad=0.1)
 
-    for imshow_axis, data in zip(imshow_axes, data):
-        imshow_axis.imshow(data)
+    for imshow_axis, adata in zip(imshow_axes, data):
+        imshow_axis.imshow(adata)
 
     return figure
 
@@ -361,8 +364,8 @@ def ImageGrid_Colorbar_Preset(data: Tuple[np.ndarray], figure: Optional[Figure] 
 
     imshow_axes = ImageGrid(figure, 111, nrows_ncols=(1, len(data)), axes_pad=0.1, share_all=True, label_mode="L", cbar_location="right", cbar_mode="single")
 
-    for imshow_axis, data in zip(imshow_axes, data):
-        imshow_image = imshow_axis.imshow(data)
+    for imshow_axis, adata in zip(imshow_axes, data):
+        imshow_image = imshow_axis.imshow(adata)
 
     imshow_axes.cbar_axes[0].colorbar(imshow_image)
 
@@ -400,7 +403,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: Tuple[np.ndarray], figure: Opti
         figure.get_image() : AxesImage
             Get imshow image.
 
-        figure.get_image().set_dat(zdata)
+        figure.get_image().set_data(zdata)
             Get imshow image.
 
         figure.get_image().set_extent((xmin, xmax, ymin, ymax))
@@ -419,8 +422,8 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: Tuple[np.ndarray], figure: Opti
 
     imshow_axes = [imshow_ax]
     imshow_images = []
-    for index, zdata in enumerate(zdata):
-        arg_image, mod_image = _complex_to_plot_arg_mod(zdata)
+    for index, azdata in enumerate(zdata):
+        arg_image, mod_image = _complex_to_plot_arg_mod(azdata)
 
         if index != 0:
             imshow_ax = divider.append_axes("right", size="100%", pad=0.1, sharex=imshow_ax, sharey=imshow_ax)
@@ -428,7 +431,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: Tuple[np.ndarray], figure: Opti
             imshow_ax.yaxis.set_tick_params(labelleft=False)
             imshow_axes.append(imshow_ax)
 
-        _bg_imshow_image = imshow_ax.imshow(np.full(zdata.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
+        _bg_imshow_image = imshow_ax.imshow(np.full(azdata.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
         imshow_image = imshow_ax.imshow(arg_image, alpha=mod_image, cmap="hsv", vmin=-1, vmax=1)
         imshow_ax.invert_yaxis()
         imshow_images.append(imshow_image)
@@ -452,8 +455,8 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: Tuple[np.ndarray], figure: Opti
 
     # -----------------------------------------------------------------------------------------------------------------
     def _set_data(zdata: Tuple[np.ndarray, ...]) -> None:
-        for zdata, imshow_image in zip(zdata, imshow_images):
-            arg_image, mod_image = _complex_to_plot_arg_mod(zdata)
+        for azdata, imshow_image in zip(zdata, imshow_images):
+            arg_image, mod_image = _complex_to_plot_arg_mod(azdata)
             imshow_image.set_data(arg_image)
             imshow_image.set_alpha(mod_image)
 
@@ -497,6 +500,187 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: Tuple[np.ndarray], figure: Opti
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
+    # -----------------------------------------------------------------------------------------------------------------
+
+    return figure
+
+
+def Imshow_Colorbar_Imshow_Colorbar_Preset(data: Tuple[np.ndarray, np.ndarray], figure: Optional[Figure] = None) -> Figure:
+    """Preset with two Imshow axis and Colorbar axis pairs.
+
+    Examples
+    --------
+        figure = preset.Imshow_Colorbar_Imshow_Colorbar_Preset((imageA, imageB))
+
+    Parameters
+    ----------
+        data: Tuple[np.ndarray, np.ndarray]
+            Tuple of two images.
+        figure: plt.Figure
+            Figure object.
+
+    Returns
+    -------
+        figure : plt.Figure
+            Figure object with the imshow axis.
+
+        Functions
+        ---------
+        figure.get_images() : List[AxesImage]
+            Get imshow image.
+
+        figure.get_images()[0].set_data(zdata)
+            Get imshow image.
+
+        figure.get_images()[0].set_extent((xmin, xmax, ymin, ymax))
+            Set image extent.
+
+        figure.get_imshow_axes() : List[Axis]
+            Get imshow axis.
+
+    """
+
+    if figure is None:
+        figure = plt.figure()
+
+    data_a, data_b = data
+
+    imshow_ax_a = figure.gca()
+    imshow_image_a = imshow_ax_a.imshow(data_a)
+    imshow_ax_a.invert_yaxis()
+
+    divider = make_axes_locatable(imshow_ax_a)
+
+    colorbar_ax_a = divider.append_axes("right", size="5%", pad=0.1)
+    figure.colorbar(imshow_image_a, cax=colorbar_ax_a)
+
+    imshow_ax_b = divider.append_axes("right", size="100%", pad=1.0)
+    imshow_image_b = imshow_ax_b.imshow(data_b)
+    imshow_ax_b.invert_yaxis()
+
+    colorbar_ax_b = divider.append_axes("right", size="5%", pad=0.1)
+    figure.colorbar(imshow_image_b, cax=colorbar_ax_b)
+
+    imshow_axes = [imshow_ax_a, imshow_ax_b]
+    imshow_images = [imshow_image_a, imshow_image_b]
+    colorbar_axes = [colorbar_ax_a, colorbar_ax_b]
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_images() -> List[AxesImage]:
+        return imshow_images
+
+    figure.get_images = _get_images
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_imshow_axes() -> List[Axis]:
+        return imshow_axes
+
+    figure.get_imshow_axes = _get_imshow_axes
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_cbar_axes() -> Axis:
+        return colorbar_axes
+
+    figure.get_cbar_axes = _get_cbar_axes
+    # -----------------------------------------------------------------------------------------------------------------
+
+    return figure
+
+
+def Histogram_Colorbar_Preset(data: np.ndarray, figure: Optional[Figure] = None, nbins=256, vmin: float = 0, vmax: float = 1.0, cmap: str = "viridis", position: str = "right") -> Figure:
+    """Preset with an Simple axis and a colorbar axis.
+
+    Examples
+    --------
+        figure = preset.Simple_Colorbar_Preset(data)
+
+    Parameters
+    ----------
+        data: np.ndarray
+            Image data.
+        figure: plt.Figure
+            Figure object.
+
+    Returns
+    -------
+        figure : plt.Figure
+            Figure object with the imshow axis.
+
+        Functions
+        ---------
+        figure.set_data(data: np.ndarray) :
+            Set histogram data.
+
+    """
+
+    if figure is None:
+        figure = plt.figure()
+
+    figure.data = data
+    figure.vmin, figure.vmax = vmin, vmax
+    figure.nbins = nbins
+
+    colormap = colormaps[cmap]
+
+    normalize_fn = Normalize(vmin=figure.vmin, vmax=figure.vmax)
+    bar_xs, bar_width = np.linspace(figure.vmin, figure.vmax, figure.nbins + 1, retstep=True)
+    figure.bar_xcs = bar_xs + bar_width / 2
+    bar_colors = colormap(normalize_fn(figure.bar_xcs))
+
+    histogram_ax = figure.gca()
+    divider = make_axes_locatable(histogram_ax)
+    colorbar_ax = divider.append_axes(position, size="5%", pad=0.1, sharex=histogram_ax)
+    ColorbarBase(colorbar_ax, cmap=colormap, norm=normalize_fn, orientation="horizontal")
+
+    bar_hs, _ = np.histogram(figure.data, figure.bar_xcs)
+
+    hist_bars = histogram_ax.bar(figure.bar_xcs[:-1], bar_hs, width=bar_width, color=bar_colors)
+    histogram_ax.set_xlim(figure.vmin, figure.vmax)
+    histogram_ax.set_xlabel(None)
+    histogram_ax.tick_params(axis="x", which="both", labelbottom=False)
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _set_data(data: np.ndarray):
+        figure.data = data
+        bar_hs, _ = np.histogram(figure.data, figure.bar_xcs)
+        for hist_bar, bar_h in zip(hist_bars, bar_hs):
+            hist_bar.set_height(bar_h)
+
+    figure.set_data = _set_data
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_histogram_ax() -> Axis:
+        return histogram_ax
+
+    figure.get_histogram_ax = _get_histogram_ax
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_cbar_ax() -> Axis:
+        return colorbar_ax
+
+    figure.get_cbar_ax = _get_cbar_ax
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _set_vlim(vmin, vmax):
+        figure.vmin, figure.vmax = vmin, vmax
+        normalize_fn = Normalize(vmin=figure.vmin, vmax=figure.vmax)
+        ColorbarBase(colorbar_ax, cmap=colormap, norm=normalize_fn, orientation="horizontal")
+        bar_xs, bar_width = np.linspace(figure.vmin, figure.vmax, figure.nbins + 1, retstep=True)
+        figure.bar_xcs = bar_xs + bar_width / 2
+        bar_colors = colormap(normalize_fn(figure.bar_xcs))
+        bar_hs, _ = np.histogram(figure.data, figure.bar_xcs)
+        for hist_bar, bar_h, bar_x, bar_color in zip(hist_bars, bar_hs, bar_xs, bar_colors):
+            hist_bar.set_x(bar_x)
+            hist_bar.set_width(bar_width)
+            hist_bar.set_height(bar_h)
+            hist_bar.set_color(bar_color)
+
+    figure.set_vlim = _set_vlim
     # -----------------------------------------------------------------------------------------------------------------
 
     return figure
