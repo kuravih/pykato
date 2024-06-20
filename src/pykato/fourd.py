@@ -36,17 +36,18 @@ class Measurement(h5.File):
         super(Measurement, self).__init__(_path, "r")
 
     @property
-    def Intensity(self):
+    def intensity(self):
         return np.ma.masked_invalid(self["Measurement"]["Intensity"]["Data"])
 
     @property
-    def Wavelength(self):
+    def wavelength(self):
         return self["Measurement"].attrs["WavelengthInNanometers"]
 
     @property
-    def Surface(self):
-        return np.ma.masked_invalid(self["Measurement"]["SurfaceInWaves"]["Data"] * self.Wavelength)
+    def surface(self):
+        return np.ma.masked_invalid(self["Measurement"]["SurfaceInWaves"]["Data"] * self.wavelength)
 
     @property
-    def CalculatedZernikeTerms(self):
+    def calculated_zernike_terms(self):
         return np.array(self["Measurement"]["CalculatedZernikeTerms"])
+
