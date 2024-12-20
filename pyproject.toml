@@ -12,7 +12,22 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "h5py",
+    "scikit-image",
+    "astropy"
+]
 
 [project.urls]
 Homepage = "https://github.com/kuravih/pykato"
 Issues = "https://github.com/kuravih/pykato/issues"
+
+[tool.setuptools]
+packages = ["pykato"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+"pykato" = ["res/ProggyClean.ttf"]
