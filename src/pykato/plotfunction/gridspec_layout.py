@@ -14,10 +14,10 @@ def _gridSpec_layout(gridspecs) -> Tuple[Figure, Tuple[Axes, ...]]:
 
 
 def GridSpec_Layout(*args, aspect_ratios: Optional[Tuple[float, ...]] = None, **kwargs) -> Figure:
-    """Layout a figure with multiple axes with specified aspect ratios.
+    """
+    Layout a figure with multiple axes with specified aspect ratios.
 
-    Examples
-    --------
+    Examples:
         simple_layout_figure = GridSpec_Layout(1,1)
         image_layout_figure = GridSpec_Layout(1,1, aspect_ratios=(1,))
         fourimages_layout_figure = GridSpec_Layout(1,4, aspect_ratios=(1,1,1,1), width_ratios=(1,1,1,1), wspace=0.05)
@@ -27,17 +27,14 @@ def GridSpec_Layout(*args, aspect_ratios: Optional[Tuple[float, ...]] = None, **
         fourimages_twocolorbars_layout_figure = GridSpec_Layout(1, 6, aspect_ratios=(1,1,1,1,0.05,0.05), width_ratios=(1,1,1,1,0.05,0.05), wspace=0.05)
 
 
-    Parameters
-    ----------
+    Parameters:
         aspect_ratios: Optional[Tuple[float, ...]]
             Aspect ratios for the exes.
         Other: matplotlib.gridspec.GridSpec parameters
             https://matplotlib.org/stable/api/_as_gen/matplotlib.gridspec.GridSpec.html
 
-    Returns
-    -------
-        fig : plt.Figure
-            Figure object.
+    Returns: plt.Figure
+        Figure object.
     """
 
     figure, imshow_axes = _gridSpec_layout(gridspec.GridSpec(*args, **kwargs))
