@@ -1,7 +1,7 @@
 import unittest
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
 from pykato.plotfunction import preset
-from pykato.function import checkers, sinusoid, vortex, box, circle, gauss2d, airy, polka, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates
+from pykato.function import checkers, sinusoid, vortex, box, disk, gauss2d, airy, polka, text, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates
 import numpy as np
 
 
@@ -39,12 +39,12 @@ class TestFunction(unittest.TestCase):
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_box.png")
 
-    def test_circle(self):
-        data = circle((200, 200), 50, (-100, -100))
-        self.assertIsInstance(data, np.ndarray, "Array not returned by function.circle()")
+    def test_disk(self):
+        data = disk((200, 200), 50, (-100, -100))
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.disk()")
 
         figure = preset.Imshow_Preset(data)
-        figure.savefig("tests/output/function_circle.png")
+        figure.savefig("tests/output/function_disk.png")
 
     def test_gauss2d(self):
         data = gauss2d((200, 200), offset=0, height=1, width=(10, 10), center=(100, 100), tilt=0)
@@ -62,10 +62,22 @@ class TestFunction(unittest.TestCase):
 
     def test_polka(self):
         data = polka((200, 200), 3, (40, 40), (0, 0))
+        print(f"data min {np.min(data)}")
+        print(f"data max {np.max(data)}")
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.polka()")
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_polka.png")
+
+    def test_text(self):
+        data = text((200, 200), "test", (100, 100), 100)
+        print(f"data min {np.min(data)}")
+        print(f"data max {np.max(data)}")
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.character()")
+
+        figure = preset.Imshow_Preset(data)
+        figure.get_image().set_clim(0, 1.0)
+        figure.savefig("tests/output/function_text.png")
 
     def test_linear2D(self):
         data = linear2d((200, 200), 3, 2, 1)
@@ -81,7 +93,7 @@ class TestFunction(unittest.TestCase):
         def fit_gauss_2d_fn(xx_yy, cx, cy, o, h, wx, wy):
             return gauss2d_fn(xx_yy, (cx, cy), o, h, (wx, wy))
 
-        (cx, cy, fit_offset, fit_height, wx, wy), _ = least_squares_fit_2d(gauss2d_data, fit_gauss_2d_fn, guess_prms=(101, 101, 0, 1.1, 25.5, 25.5)) # pylint: disable=unbalanced-tuple-unpacking
+        (cx, cy, fit_offset, fit_height, wx, wy), _ = least_squares_fit_2d(gauss2d_data, fit_gauss_2d_fn, guess_prms=(101, 101, 0, 1.1, 25.5, 25.5))  # pylint: disable=unbalanced-tuple-unpacking
         fit_center = (cx, cy)
         fit_width = (wx, wy)
 
@@ -106,7 +118,7 @@ class TestFunction(unittest.TestCase):
         x_coord, y_coord = generate_coordinates((200, 200), (-10, -10), cartesian=True)
         linear2d_data = linear2d_fn((x_coord, y_coord), a, b, c)
 
-        (fit_a, fit_b, fit_c), _ = least_squares_fit_2d(linear2d_data, linear2d_fn, xy_coords=(x_coord, y_coord), guess_prms=(3.3, 2.2, 1.1)) # pylint: disable=unbalanced-tuple-unpacking
+        (fit_a, fit_b, fit_c), _ = least_squares_fit_2d(linear2d_data, linear2d_fn, xy_coords=(x_coord, y_coord), guess_prms=(3.3, 2.2, 1.1))  # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((a, b, c), (fit_a, fit_b, fit_c)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
@@ -128,7 +140,7 @@ class TestFunction(unittest.TestCase):
         m, c = 0.25, -1
         data = fit_linear_fn(x, m, c)
 
-        (fit_m, fit_c), _ = least_squares_fit(data, fit_linear_fn, guess_prms=(0.26, -1.1), x_coord=x) # pylint: disable=unbalanced-tuple-unpacking
+        (fit_m, fit_c), _ = least_squares_fit(data, fit_linear_fn, guess_prms=(0.26, -1.1), x_coord=x)  # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((m, c), (fit_m, fit_c)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
@@ -149,7 +161,6 @@ class TestFunction(unittest.TestCase):
         imshow_ax.set_xlabel("x")
         figure.savefig("tests/output/test_least_squares_fit_linear.png")
 
-
     def test_least_squares_fit_quadratic(self):
         def fit_quadratic_fn(x, a, b, c):
             return a * x * x + b * x + c
@@ -158,7 +169,7 @@ class TestFunction(unittest.TestCase):
         a, b, c = 0.25, -1, 2.5
         data = fit_quadratic_fn(x, a, b, c)
 
-        (fit_a, fit_b, fit_c), _ = least_squares_fit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=x) # pylint: disable=unbalanced-tuple-unpacking
+        (fit_a, fit_b, fit_c), _ = least_squares_fit(data, fit_quadratic_fn, guess_prms=(0.26, -1.1, 2.6), x_coord=x)  # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((a, b, c), (fit_a, fit_b, fit_c)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
@@ -187,7 +198,7 @@ class TestFunction(unittest.TestCase):
         a, b, c, d = 0.25, -1, 2.5, 1
         data = fit_sinusoid_fn(x, a, b, c, d)
 
-        (fit_a, fit_b, fit_c, fit_d), _ = least_squares_fit(data, fit_sinusoid_fn, guess_prms=(0.26, -1.1, 2.6, 1.1), x_coord=x) # pylint: disable=unbalanced-tuple-unpacking
+        (fit_a, fit_b, fit_c, fit_d), _ = least_squares_fit(data, fit_sinusoid_fn, guess_prms=(0.26, -1.1, 2.6, 1.1), x_coord=x)  # pylint: disable=unbalanced-tuple-unpacking
 
         for val, fit_val in zip((a, b, c, d), (fit_a, fit_b, fit_c, fit_d)):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="parameter estimation not accurate")
