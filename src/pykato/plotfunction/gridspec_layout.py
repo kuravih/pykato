@@ -26,9 +26,8 @@ def GridSpec_Layout(*args, aspect_ratios: Optional[Tuple[float, ...]] = None, **
         image_twocolorbars_layout_figure = GridSpec_Layout(1, 3, aspect_ratios=(1,0.05,0.05), width_ratios=(1,0.05,0.05), wspace=0.05)
         fourimages_twocolorbars_layout_figure = GridSpec_Layout(1, 6, aspect_ratios=(1,1,1,1,0.05,0.05), width_ratios=(1,1,1,1,0.05,0.05), wspace=0.05)
 
-
     Parameters:
-        aspect_ratios: Optional[Tuple[float, ...]]
+        aspect_ratios: Optional[Tuple[float, ...]] = None
             Aspect ratios for the exes.
         Other: matplotlib.gridspec.GridSpec parameters
             https://matplotlib.org/stable/api/_as_gen/matplotlib.gridspec.GridSpec.html

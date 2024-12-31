@@ -6,7 +6,31 @@ from pykato.fourd import Measurement
 import numpy as np
 
 
-def Measurement_Preset(data: Measurement, mask: np.ndarray, figure: Optional[Figure] = None) -> Figure:
+def Measurement_Preset(data: Measurement, mask: Optional[np.ndarray] = None, figure: Optional[Figure] = None) -> Figure:
+    """
+    FourD measurement layout
+
+    Examples:
+        figure = Measurement_Preset(data)
+
+    Parameters:
+        data: Measurement
+            FourD measurement.
+        mask: Optional[np.ndarray] = None
+            Mask
+        figure: Optional[Figure] = None
+            Figure object.
+
+    Returns: Figure
+        Figure object with the imshow axis.
+
+    Functions:
+        close():
+            Properly close the figure.
+    """
+
+    if mask is None:
+        mask = data.surface.mask
 
     data_min = -200  # np.min(ref_flat.surface)
     data_max = 200  # np.max(ref_flat.surface)
@@ -25,10 +49,44 @@ def Measurement_Preset(data: Measurement, mask: np.ndarray, figure: Optional[Fig
     figure.get_imshow_ax().tick_params(axis="y", labelsize=8)
     figure.get_imshow_ax().tick_params(axis="x", labelsize=8)
 
+    # -----------------------------------------------------------------------------------------------------------------
+    def _close():
+        plt.close(figure)
+
+    figure.close = _close
+    # -----------------------------------------------------------------------------------------------------------------
+
     return figure
 
 
 def Measurement_Zernike_Preset(data: Measurement, mask: Optional[np.ndarray] = None, figure: Optional[Figure] = None) -> Figure:
+    """
+    FourD measurement layout with zernike plot
+
+    Examples:
+        figure = Measurement_Zernike_Preset(data)
+
+    Parameters:
+        data: Measurement
+            FourD measurement.
+        mask: Optional[np.ndarray] = None
+            Mask
+        figure: Optional[Figure] = None
+            Figure object.
+
+    Returns: plt.Figure
+        Figure object with the imshow axis.
+
+    Functions:
+        get_image(): AxesImage
+            Get imshow image.
+
+        get_bars(): Axis
+            Get imshow axis.
+
+        close():
+            Properly close the figure.
+    """
 
     if mask is None:
         mask = data.surface.mask
@@ -70,10 +128,17 @@ def Measurement_Zernike_Preset(data: Measurement, mask: Optional[np.ndarray] = N
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_bars():
+    def _get_bars(): # TODO: hint
         return bars
 
     figure.get_bars = _get_bars
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _close():
+        plt.close(figure)
+
+    figure.close = _close
     # -----------------------------------------------------------------------------------------------------------------
 
     return figure

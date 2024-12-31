@@ -1,8 +1,9 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 from enum import Enum, IntEnum, auto
 
 import numpy as np
-# from scipy.interpolate import RegularGridInterpolator
+from numpy.typing import NDArray
+from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import curve_fit
 from scipy import special
 from skimage import morphology
@@ -10,6 +11,7 @@ from skimage.feature import peak_local_max
 from skimage.measure import regionprops, label
 from PIL import Image, ImageDraw, ImageFont
 from .resource import FONT_PROGGY_CLEAN
+
 
 def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (0, 0), cartesian: bool = False, polar: bool = False) -> Tuple[np.ndarray, ...]:
     """
@@ -154,7 +156,7 @@ def vortex(shape: Tuple[int, int], charge: int) -> np.ndarray:
     return (((charge * np.arctan2(xx, yy)) / np.pi) + 1) / 2
 
 
-def box(shape: Tuple[int, int], size: Tuple[int, int], center: Tuple[int, int] = (0, 0)) -> np.ndarray:
+def box(shape: Tuple[int, int], size: Tuple[int, int], center: Tuple[float, float] = (0, 0)) -> np.ndarray:
     """
     Create a box pattern image.
 
@@ -773,3 +775,75 @@ def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: 
     position_px = positions[xy_sort(positions, (6, 6))]
 
     return ~peak_mask, position_px
+
+
+def dotf_to_wavefront(dotf: NDArray[np.complex64], locations: NDArray[np.float64]):
+    """
+    Convert dotf to a dm command using pixel
+
+    Parameters:
+        dotf: NDArray[np.complex64]
+            DOTF image.
+        locations: NDArray[np.float64] (2, n_acts)
+            Actuator locations.
+
+    Returns: nd.ndarray (n_acts)
+        Command
+
+    """
+    grid_x, grid_y = np.arange(dotf.shape[0]), np.arange(dotf.shape[1])
+    real_surface_fn, imag_surface_fn = RegularGridInterpolator((grid_x, grid_y), dotf.real), RegularGridInterpolator((grid_x, grid_y), dotf.imag)
+    wavefront = np.zeros(locations.shape[0], dtype=np.complex64)
+    for _index, _location in enumerate(locations):
+        wavefront[_index] = real_surface_fn((_location[0], _location[1])) + imag_surface_fn((_location[0], _location[1])) * 1j
+    return wavefront
+
+
+def smoothstep(edge0, edge1, x):
+    t = np.clip((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.complex64]], locations: List[NDArray[np.float64]]):
+    """
+    Convert 4 dotf maps to commands and combine them to one command
+
+    Parameters:
+        shape: Tuple[int, int]
+            Shape of command.
+        dotfs: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+            The DOTF images.
+        locations: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+            Actuator positions in each DOTF image.
+
+    Returns: nd.ndarray
+        Command
+    """
+
+    wavefronts = np.full((len(dotfs), *shape), np.nan, dtype=np.complex64)
+    dsk_radius = shape[0] / 2 - 2
+    box_center = dsk_center = (-shape[0] / 2, -shape[1] / 2)
+    box_shape = (dsk_radius/np.sqrt(2), dsk_radius/np.sqrt(2))
+
+    dsk_mask = disk(shape, dsk_radius, dsk_center)  # circular binary mask
+
+    xx, _ = generate_coordinates(shape, cartesian=True)
+    prb_mask = smoothstep(15, 25, xx)  # step grayscale mask to remove probe
+
+    box_mask = box(shape, box_shape, box_center)
+
+    for index, (wavefront, dotf, all_act_pos_px) in enumerate(zip(wavefronts, dotfs, locations)):
+        wavefront[dsk_mask] = dotf_to_wavefront(dotf, all_act_pos_px)
+        avg_phase = np.nanmean(np.angle(wavefront[box_mask]))
+        wavefronts[index] = np.abs(wavefront)*np.exp((np.angle(wavefront)-avg_phase)*1j)
+        wavefronts[index] = wavefronts[index] * np.rot90(prb_mask, index)
+
+    compound_wavefront = np.nanmean(wavefronts, axis=0)
+
+    # mean_command = np.nanmean(commands, axis=0)
+    # (tip, tilt, piston), _, _, _, _ = least_squares_fit_2d(mean_command, linear2d_fn)
+    # x_coordinates, y_coordinates = generate_coordinates(mean_command.shape, cartesian=True)
+
+    # return mean_command - (x_coordinates * tip) - (y_coordinates * tilt) - piston
+
+    return compound_wavefront
