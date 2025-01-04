@@ -585,7 +585,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     return figure
 
 
-def Complex_ImageGrid_TwoColorbars_Preset(zdata: List[NDArray[np.complex64]], figure: Optional[Figure] = None) -> Figure:
+def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], figure: Optional[Figure] = None) -> Figure:
     """
     Preset with grid of Imshow axes and two colorbar axes.
 
@@ -593,7 +593,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: List[NDArray[np.complex64]], fi
         figure = preset.Complex_Imshow_TwoColorbars_Preset(data)
 
     Parameters:
-        zdata: np.ndarray
+        zimage: List[NDArray[np.complex64]]
             Complex field data.
 
         figure: Optional[Figure] = None
@@ -627,7 +627,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: List[NDArray[np.complex64]], fi
 
     imshow_axes = [imshow_ax]
     imshow_images = []
-    for index, azdata in enumerate(zdata):
+    for index, azdata in enumerate(zimage):
         arg_image, mod_image = _complex_to_plot_arg_mod(azdata)
 
         if index != 0:
@@ -653,21 +653,30 @@ def Complex_ImageGrid_TwoColorbars_Preset(zdata: List[NDArray[np.complex64]], fi
     mod_colorbar_ax.set_title("mod", size=10)
 
     # -----------------------------------------------------------------------------------------------------------------
+    plots = []
     def _plot(xys: List[Tuple[np.float64, np.float64]], *args, **kwargs) -> None:
         for (x, y), imshow_axis in zip(xys, imshow_axes):
-            imshow_axis.plot(x, y, *args, **kwargs)
+            plot, = imshow_axis.plot(x, y, *args, **kwargs)
+            plots.append(plot)
 
     figure.plot = _plot
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def __set_data(index: int, zdata: np.ndarray) -> None:
-        arg_image, mod_image = _complex_to_plot_arg_mod(zdata)
+    def _get_plots():
+        return plots
+
+    figure.get_plots = _get_plots
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def __set_data(index: int, zimage: NDArray[np.complex64]) -> None:
+        arg_image, mod_image = _complex_to_plot_arg_mod(zimage)
         imshow_images[index].original_set_data(arg_image)
         imshow_images[index].set_alpha(mod_image)
 
     for index, imshow_image in enumerate(imshow_images):
-        imshow_image.set_data = lambda zdata, index=index: __set_data(index, zdata)
+        imshow_image.set_data = lambda zimage, index=index: __set_data(index, zimage)
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------

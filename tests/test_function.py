@@ -1,7 +1,7 @@
 import unittest
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
 from pykato.plotfunction import preset
-from pykato.function import checkers, sinusoid, vortex, box, disk, gauss2d, airy, polka, text, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates
+from pykato.function import checkers, sinusoid, vortex, box, disk, gauss2d, airy, polka, register, text, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates
 import numpy as np
 
 
@@ -68,6 +68,15 @@ class TestFunction(unittest.TestCase):
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_polka.png")
+
+    def test_register(self):
+        data = register((200, 200), (5, 5), 3, (20, 20), (100, 100))
+        print(f"data min {np.min(data)}")
+        print(f"data max {np.max(data)}")
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.register()")
+
+        figure = preset.Imshow_Preset(data)
+        figure.savefig("tests/output/function_register.png")
 
     def test_text(self):
         data = text((200, 200), "test", (100, 100), 100)

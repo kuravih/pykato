@@ -334,7 +334,7 @@ def gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width:
         image_gauss = Gauss2d((200,200), offset=0, height=1, a=(50,25), x=(100,100), tilt=45)
 
     Parameters:
-        shape: Tuple[float, float]
+        shape: Tuple[int, int]
             Image shape.
         offset: float
             DC Offset.
@@ -362,7 +362,7 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], o
         image_polka = polka((200,200), 3, (40,40), 0)
 
     Parameters:
-        shape: Tuple[float, float]
+        shape: Tuple[int, int]
             Image shape.
         radius: float
             Radius of a dot.
@@ -377,7 +377,41 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], o
     width, height = shape
     dot_h_spacing, dot_v_spacing = spacing
     dot_h_offset, dot_v_offset = offset
-    xs, ys = np.arange(0, width + dot_h_spacing, dot_h_spacing) - 0.5 + dot_h_offset, np.arange(0, height + dot_v_spacing, dot_v_spacing) - 0.5 + dot_v_offset
+    xs, ys = np.arange(0, width + dot_h_spacing, dot_h_spacing) + 0.5 * dot_h_offset, np.arange(0, height + dot_v_spacing, dot_v_spacing) + 0.5 * dot_v_offset
+
+    spots = []
+    for x in xs:
+        for y in ys:
+            spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
+
+    return np.sum(spots, axis=0)
+
+
+def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spacing: Tuple[float, float], center: Tuple[float, float] = (0, 0)) -> np.ndarray:
+    """
+    Create a polka dot pattern of 2d gaussian spots.
+
+    Example:
+        image_register = register((200,200), (4,4), 3, (40,40), 0)
+
+    Parameters:
+        shape: Tuple[int, int]
+            Image shape.
+        count: Tuple[int, int]
+            Number of dots.
+        radius: float
+            Radius of a dot.
+        spacing: Tuple[float, float]
+            Spacing between dots
+        center: Tuple[int, int] = (0, 0)
+            Origin center.
+
+    Returns: np.ndarray
+        image of the registration dot pattern.
+    """
+    dot_h_spacing, dot_v_spacing = spacing
+    dot_h_center, dot_v_center = center
+    xs, ys = dot_h_spacing * (np.arange(0, count[0]) + 0.5) + dot_h_center - dot_h_spacing * count[0] / 2, dot_v_spacing * (np.arange(0, count[1]) + 0.5) + dot_v_center - dot_v_spacing * count[1] / 2
 
     spots = []
     for x in xs:
@@ -464,7 +498,7 @@ def airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: f
         image_airy = Airy2d(TODO: example)
 
     Parameters:
-        shape: Tuple[float, float]
+        shape: Tuple[int, int]
             Image shape.
         center: Tuple[float, float]
             Gaussian center coordinates.
@@ -513,7 +547,7 @@ def linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
         image_plane = Linear2d(TODO: example)
 
     Parameters:
-        shape: Tuple[float, float]
+        shape: Tuple[int, int]
             Image shape.
         a: float
             Constant.
@@ -717,7 +751,7 @@ def xy_sort(xy: np.ndarray, shape: Tuple[int, int], h_ascend: bool = True, v_asc
     return np.array(indices).flatten()
 
 
-def dotf_registration_mask(shape: Tuple[int, int], size: int, center: Tuple[int, int]):
+def dotf_registration_mask(shape: Tuple[int, int], size: float = 0.5, center: Tuple[float, float] = (0.5, 0.5)):
     """
     DOTF Registration pattern mask.
 
@@ -725,12 +759,12 @@ def dotf_registration_mask(shape: Tuple[int, int], size: int, center: Tuple[int,
         mask = dotf_registration_mask(TODO: example)
 
     Parameters:
-        shape: Tuple[float, float]
+        shape: Tuple[int, int]
             Image shape.
-        size: int
-            Size of the mask.
+        size: float
+            Size of the mask (normalized).
         center: Tuple[float, float]
-            Center of the mask.
+            Center of the mask (normalized).
 
     Returns: np.ndarray
         Mask for the DOTF registration pattern.
@@ -823,7 +857,7 @@ def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.co
     wavefronts = np.full((len(dotfs), *shape), np.nan, dtype=np.complex64)
     dsk_radius = shape[0] / 2 - 2
     box_center = dsk_center = (-shape[0] / 2, -shape[1] / 2)
-    box_shape = (dsk_radius/np.sqrt(2), dsk_radius/np.sqrt(2))
+    box_shape = (dsk_radius / np.sqrt(2), dsk_radius / np.sqrt(2))
 
     dsk_mask = disk(shape, dsk_radius, dsk_center)  # circular binary mask
 
@@ -832,10 +866,10 @@ def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.co
 
     box_mask = box(shape, box_shape, box_center)
 
-    for index, (wavefront, dotf, all_act_pos_px) in enumerate(zip(wavefronts, dotfs, locations)):
-        wavefront[dsk_mask] = dotf_to_wavefront(dotf, all_act_pos_px)
+    for index, (wavefront, dotf, all_act_loc_px) in enumerate(zip(wavefronts, dotfs, locations)):
+        wavefront[dsk_mask] = dotf_to_wavefront(dotf, all_act_loc_px)
         avg_phase = np.nanmean(np.angle(wavefront[box_mask]))
-        wavefronts[index] = np.abs(wavefront)*np.exp((np.angle(wavefront)-avg_phase)*1j)
+        wavefronts[index] = np.abs(wavefront) * np.exp((np.angle(wavefront) - avg_phase) * 1j)
         wavefronts[index] = wavefronts[index] * np.rot90(prb_mask, index)
 
     compound_wavefront = np.nanmean(wavefronts, axis=0)
@@ -847,3 +881,19 @@ def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.co
     # return mean_command - (x_coordinates * tip) - (y_coordinates * tilt) - piston
 
     return compound_wavefront
+
+
+def wavefront_to_phase_delay(wavefront: NDArray[np.complex64], λ: float = 632.992) -> NDArray[np.float64]:
+    """
+    Calculate the phase delay in nanometers from the a complex wavefront.
+
+    Parameters:
+        wavefront: NDArray[np.complex64]
+            Wavefront
+        λ: float = 632.992
+            Wavelength
+
+    Returns: NDArray[np.float64]:
+        Phase delay of the wavefront
+    """
+    return λ * (np.angle(wavefront) + np.pi) / (2 * np.pi)
