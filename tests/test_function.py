@@ -26,7 +26,7 @@ class TestFunction(unittest.TestCase):
         arg = (2 * vortex((200, 200), 3) - 1) * np.pi
         self.assertIsInstance(arg, np.ndarray, "Array not returned by function.vortex()")
 
-        polka_test_image = polka((100, 100), 4, (20, 20), (-10, -10))
+        polka_test_image = polka((100, 100), 4, (20, 20), (-20, -20))
         vortex_test_image = np.pi * (vortex((100, 100), 2) * 2 - 1)
         polka_vortex_complex_test_image = polka_test_image * np.exp(1j * vortex_test_image)
         figure = preset.Complex_Imshow_Preset(polka_vortex_complex_test_image)
@@ -61,7 +61,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_airy.png")
 
     def test_polka(self):
-        data = polka((200, 200), 3, (40, 40), (0, 0))
+        data = polka((200, 200), 10, (40, 40), (-40, -40))
         print(f"data min {np.min(data)}")
         print(f"data max {np.max(data)}")
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.polka()")

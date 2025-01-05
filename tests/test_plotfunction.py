@@ -93,7 +93,7 @@ class TestGridSpecLayout(unittest.TestCase):
 
 class BaseTestPreset(unittest.TestCase):
     def setUp(self):
-        polka_test_image = polka((100, 100), 4, (20, 20), (-10, -10))
+        polka_test_image = polka((100, 100), 4, (20, 20), (-20, -20))
         checkers_test_image = checkers((100, 100), (25, 25), (-12.5, 12.5))
         sinusoid_test_image = sinusoid((100, 100), 20, 270, 45)
         gauss_test_image = gauss2d((100, 100), 0, 1, (20, 20), (50, 50))
