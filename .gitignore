@@ -8,3 +8,9 @@ src/pykato.egg-info/
 .vscode/settings.json
 tests/output/
 src/pykato/py.typed
+
+push.sh
+
+dep_excludes.txt
+
+dev_excludes.txt
