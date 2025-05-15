@@ -75,12 +75,12 @@ def Imshow_Preset(image: NDArray[np.float64], figure: Optional[Figure] = None) -
     return figure
 
 
-def _complex_to_plot_arg_mod(zdata: NDArray[np.complex64]) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+def _complex_to_plot_abs_arg(zdata: NDArray[np.complex64]) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
     arg_image = np.angle(zdata) / np.pi
-    mod = np.abs(zdata)
-    mod = (mod - np.nanmin(mod)) / (np.nanmax(mod) - np.nanmin(mod))
-    mod_image = np.nan_to_num(mod, nan=0.0, posinf=1.0, neginf=0.0)
-    return arg_image, mod_image
+    _abs = np.abs(zdata)
+    _abs = (_abs - np.nanmin(_abs)) / (np.nanmax(_abs) - np.nanmin(_abs))
+    abs_image = np.nan_to_num(_abs, nan=0.0, posinf=1.0, neginf=0.0)
+    return abs_image, arg_image
 
 
 def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure] = None) -> Figure:
@@ -119,18 +119,18 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure
 
     imshow_ax = figure.gca()
 
-    arg_image, mod_image = _complex_to_plot_arg_mod(zimage)
+    abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
 
     # approach 1: using a black/white background image without alpha + an hsv data image with alpha
     _bg_imshow_image = imshow_ax.imshow(np.full(zimage.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
-    imshow_image = imshow_ax.imshow(arg_image, alpha=mod_image, cmap="hsv", vmin=-1, vmax=1)
+    imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
     imshow_ax.invert_yaxis()
     imshow_image.original_set_data = imshow_image.set_data
     imshow_image.set_data = None
 
     # # approach 2: using an hsv data background image without alpha + a black/white foreground image with alpha
     # imshow_image = imshow_ax.imshow(arg_image, cmap="hsv", vmin=-1, vmax=1)
-    # _fg_imshow_image = imshow_ax.imshow(np.full(zdata.shape, 1, dtype=float), "gray", alpha=1-mod_image, vmin=0, vmax=1)
+    # _fg_imshow_image = imshow_ax.imshow(np.full(zdata.shape, 1, dtype=float), "gray", alpha=1-abs_image, vmin=0, vmax=1)
 
     # TODO: out of the 2 approaches one is more convenient for using with set_data(complex) and set_alpha(normalized_intensity)
 
@@ -150,9 +150,9 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure
 
     # -----------------------------------------------------------------------------------------------------------------
     def _set_data(zimage: NDArray[np.complex64]) -> None:
-        arg_image, mod_image = _complex_to_plot_arg_mod(zimage)
+        abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
         imshow_image.original_set_data(arg_image)
-        imshow_image.set_alpha(mod_image)
+        imshow_image.set_alpha(abs_image)
 
     imshow_image.set_data = _set_data
     # -----------------------------------------------------------------------------------------------------------------
@@ -201,8 +201,12 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Optional[Figure] 
     if figure is None:
         figure = plt.figure()
 
+    cmap = plt.cm.viridis.copy()
+    cmap.set_bad(color='black')
+    # cmap.set_over("red")  # Set color for values exceeding the colormap range
+
     imshow_ax = figure.gca()
-    imshow_image = imshow_ax.imshow(image)
+    imshow_image = imshow_ax.imshow(image, cmap=cmap)
     imshow_ax.invert_yaxis()
     divider = make_axes_locatable(imshow_ax)
     colorbar_ax = divider.append_axes("right", size="5%", pad=0.1)
@@ -288,10 +292,10 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Op
 
     imshow_ax = figure.gca()
 
-    arg_image, mod_image = _complex_to_plot_arg_mod(zimage)
+    abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
 
     bg_imshow_image = imshow_ax.imshow(np.full(zimage.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
-    imshow_image = imshow_ax.imshow(arg_image, alpha=mod_image, cmap="hsv", vmin=-1, vmax=1)
+    imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
     imshow_ax.invert_yaxis()
     imshow_image.original_set_data = imshow_image.set_data
     imshow_image.set_data = None
@@ -315,9 +319,9 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Op
 
     # -----------------------------------------------------------------------------------------------------------------
     def _set_data(zimage: NDArray[np.complex64]) -> None:
-        arg_image, mod_image = _complex_to_plot_arg_mod(zimage)
+        abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
         imshow_image.original_set_data(arg_image)
-        imshow_image.set_alpha(mod_image)
+        imshow_image.set_alpha(abs_image)
 
     imshow_image.set_data = _set_data
     # -----------------------------------------------------------------------------------------------------------------
@@ -502,6 +506,9 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     if figure is None:
         figure = plt.figure()
 
+    cmap = plt.cm.viridis.copy()
+    cmap.set_bad(color='black')
+
     imshow_ax = figure.gca()
     divider = make_axes_locatable(imshow_ax)
 
@@ -514,7 +521,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
             imshow_ax.yaxis.set_tick_params(labelleft=False)
             imshow_axes.append(imshow_ax)
 
-        imshow_image = imshow_ax.imshow(image)
+        imshow_image = imshow_ax.imshow(image, cmap=cmap)
         imshow_ax.invert_yaxis()
         imshow_images.append(imshow_image)
 
@@ -575,6 +582,13 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     figure.get_imshow_axes = _get_imshow_axes
     # -----------------------------------------------------------------------------------------------------------------
 
+        # -----------------------------------------------------------------------------------------------------------------
+    def _get_cbar_ax() -> Axes:
+        return colorbar_ax
+
+    figure.get_cbar_ax = _get_cbar_ax
+    # -----------------------------------------------------------------------------------------------------------------
+
     # -----------------------------------------------------------------------------------------------------------------
     def _close():
         plt.close(figure)
@@ -628,7 +642,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
     imshow_axes = [imshow_ax]
     imshow_images = []
     for index, azdata in enumerate(zimage):
-        arg_image, mod_image = _complex_to_plot_arg_mod(azdata)
+        abs_image, arg_image = _complex_to_plot_abs_arg(azdata)
 
         if index != 0:
             imshow_ax = divider.append_axes("right", size="100%", pad=0.1, sharex=imshow_ax, sharey=imshow_ax)
@@ -637,7 +651,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
             imshow_axes.append(imshow_ax)
 
         _bg_imshow_image = imshow_ax.imshow(np.full(azdata.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
-        imshow_image = imshow_ax.imshow(arg_image, alpha=mod_image, cmap="hsv", vmin=-1, vmax=1)
+        imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
         imshow_image.original_set_data = imshow_image.set_data
         imshow_image.set_data = None
         imshow_ax.invert_yaxis()
@@ -671,9 +685,9 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
 
     # -----------------------------------------------------------------------------------------------------------------
     def __set_data(index: int, zimage: NDArray[np.complex64]) -> None:
-        arg_image, mod_image = _complex_to_plot_arg_mod(zimage)
+        abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
         imshow_images[index].original_set_data(arg_image)
-        imshow_images[index].set_alpha(mod_image)
+        imshow_images[index].set_alpha(abs_image)
 
     for index, imshow_image in enumerate(imshow_images):
         imshow_image.set_data = lambda zimage, index=index: __set_data(index, zimage)
@@ -769,10 +783,14 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], ND
     if figure is None:
         figure = plt.figure()
 
+    cmap = plt.cm.viridis.copy()
+    cmap.set_bad(color='black')
+    cmap.set_over("red")  
+
     image_a, image_b = images
 
     imshow_ax_a = figure.gca()
-    imshow_image_a = imshow_ax_a.imshow(image_a)
+    imshow_image_a = imshow_ax_a.imshow(image_a, cmap=cmap)
     imshow_ax_a.invert_yaxis()
 
     divider = make_axes_locatable(imshow_ax_a)
@@ -781,7 +799,7 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], ND
     figure.colorbar(imshow_image_a, cax=colorbar_ax_a)
 
     imshow_ax_b = divider.append_axes("right", size="100%", pad=1.0)
-    imshow_image_b = imshow_ax_b.imshow(image_b)
+    imshow_image_b = imshow_ax_b.imshow(image_b, cmap=cmap)
     imshow_ax_b.invert_yaxis()
 
     colorbar_ax_b = divider.append_axes("right", size="5%", pad=0.1)

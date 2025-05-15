@@ -9,8 +9,10 @@ from scipy import special
 from skimage import morphology
 from skimage.feature import peak_local_max
 from skimage.measure import regionprops, label
+from skimage.restoration import unwrap_phase
 from PIL import Image, ImageDraw, ImageFont
 from .resource import FONT_PROGGY_CLEAN
+import datetime
 
 
 def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (0, 0), cartesian: bool = False, polar: bool = False) -> Tuple[np.ndarray, ...]:
@@ -211,16 +213,16 @@ def dotf_probe(shape: Tuple[int, int], size: Tuple[int, int], direction: DOTFPro
     width, height = shape
     a, b = size
     if direction == DOTFProbeDirection.RIGHT:
-        _center = (-width, -int(height / 2))
+        _center = (-width, -height // 2)
         _size = a, b
     elif direction == DOTFProbeDirection.BOTTOM:
-        _center = (-int(width / 2), 0)
+        _center = (-width // 2, 0)
         _size = b, a
     elif direction == DOTFProbeDirection.LEFT:
-        _center = (0, -int(height / 2))
+        _center = (0, -height // 2)
         _size = a, b
     else:  # DOTFProbeDirection.TOP
-        _center = (-int(width / 2), -height)
+        _center = (-width // 2, -height)
         _size = b, a
     return box(shape, _size, _center)
 
@@ -354,7 +356,7 @@ def gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width:
     return gauss2d_fn((xx, yy), center, offset, height, width, tilt)
 
 
-def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], offset: Tuple[float, float] = (0, 0)) -> np.ndarray:
+def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], offset: Tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
     """
     Create a polka dot pattern of 2d gaussian spots.
 
@@ -384,10 +386,14 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], o
         for y in ys:
             spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
 
-    return np.sum(spots, axis=0)
+    image = np.sum(spots, axis=0)
+    if normalize:
+        return image / np.max(image)
+    else:
+        return image
 
 
-def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spacing: Tuple[float, float], center: Tuple[float, float] = (0, 0)) -> np.ndarray:
+def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spacing: Tuple[float, float], center: Tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
     """
     Create a polka dot pattern of 2d gaussian spots.
 
@@ -416,9 +422,18 @@ def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spac
     spots = []
     for x in xs:
         for y in ys:
-            spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
+            if radius == 0:
+                points = np.zeros((shape))
+                points[int(np.floor(x)), int(np.floor(y))] = 1
+                spots.append(points)
+            else:
+                spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
 
-    return np.sum(spots, axis=0)
+    image = np.sum(spots, axis=0)
+    if normalize:
+        return image / np.max(image)
+    else:
+        return image
 
 
 def text(shape: Tuple[int, int], string: str, position: Optional[Tuple[float, float]] = None, font_size: Optional[int] = None) -> np.ndarray:
@@ -776,7 +791,7 @@ def dotf_registration_mask(shape: Tuple[int, int], size: float = 0.5, center: Tu
     return box(shape, _size_px, center_px)
 
 
-def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: int):
+def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: Tuple[int, int]):
     """
     Detect registration patterns.
 
@@ -797,7 +812,7 @@ def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: 
         position_px: np.ndarray
             Numpy array with (n,2) elements.
     """
-    peak_indices = peak_local_max(image * mask, num_peaks=num_peaks, min_distance=3, num_peaks_per_label=1)
+    peak_indices = peak_local_max(image * mask, num_peaks=num_peaks[0] * num_peaks[1], min_distance=5, num_peaks_per_label=1)
     peak_mask = np.zeros(image.shape, dtype=bool)
     peak_mask[tuple(peak_indices.T)] = True
     peak_dilation_element = morphology.disk(3)
@@ -806,7 +821,7 @@ def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: 
     peak_label = label(peak_mask)
     properties = regionprops(peak_label, image)
     positions = np.array([_property.centroid_weighted for _property in properties])
-    position_px = positions[xy_sort(positions, (6, 6))]
+    position_px = positions[xy_sort(positions, num_peaks)]
 
     return ~peak_mask, position_px
 
@@ -854,46 +869,36 @@ def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.co
         Command
     """
 
-    wavefronts = np.full((len(dotfs), *shape), np.nan, dtype=np.complex64)
-    dsk_radius = shape[0] / 2 - 2
+    wavefronts = np.full((len(dotfs), *shape), 0, dtype=np.complex64)
+    dsk_radius = shape[0] / 2 + 0.5
     box_center = dsk_center = (-shape[0] / 2, -shape[1] / 2)
     box_shape = (dsk_radius / np.sqrt(2), dsk_radius / np.sqrt(2))
 
     dsk_mask = disk(shape, dsk_radius, dsk_center)  # circular binary mask
 
     xx, _ = generate_coordinates(shape, cartesian=True)
-    prb_mask = smoothstep(15, 25, xx)  # step grayscale mask to remove probe
+    prb_mask = 1 - smoothstep(25, 30, xx)  # step grayscale mask to remove probe
 
     box_mask = box(shape, box_shape, box_center)
 
     for index, (wavefront, dotf, all_act_loc_px) in enumerate(zip(wavefronts, dotfs, locations)):
         wavefront[dsk_mask] = dotf_to_wavefront(dotf, all_act_loc_px)
-        avg_phase = np.nanmean(np.angle(wavefront[box_mask]))
-        wavefronts[index] = np.abs(wavefront) * np.exp((np.angle(wavefront) - avg_phase) * 1j)
+        wavefront_abs = np.abs(wavefront)
+        wavefront_phs = unwrap_phase(np.angle(wavefront))
+        avg_phs = np.nanmean(wavefront_phs[box_mask])
+        wavefront_phs = wavefront_phs - avg_phs
+        wavefronts[index] = wavefront_abs * np.exp(wavefront_phs * 1j)
         wavefronts[index] = wavefronts[index] * np.rot90(prb_mask, index)
 
-    compound_wavefront = np.nanmean(wavefronts, axis=0)
+    compound_wavefront = np.ma.array(np.zeros(shape, dtype=np.complex64), mask=~dsk_mask)
+    compound_wavefront.data[:] = np.nanmean(wavefronts, axis=0)
 
-    # mean_command = np.nanmean(commands, axis=0)
-    # (tip, tilt, piston), _, _, _, _ = least_squares_fit_2d(mean_command, linear2d_fn)
-    # x_coordinates, y_coordinates = generate_coordinates(mean_command.shape, cartesian=True)
-
-    # return mean_command - (x_coordinates * tip) - (y_coordinates * tilt) - piston
-
-    return compound_wavefront
+    return np.ma.copy(compound_wavefront)
 
 
-def wavefront_to_phase_delay(wavefront: NDArray[np.complex64], λ: float = 632.992) -> NDArray[np.float64]:
-    """
-    Calculate the phase delay in nanometers from the a complex wavefront.
+def timestamp_string(timestamp: float = datetime.datetime.now().timestamp(), frmt="%H:%M:%S", ms: int = 3, separator=".") -> str:
+    return datetime.datetime.fromtimestamp(timestamp).strftime(frmt) + f"{separator}{int((timestamp % 1) * (10**ms)):03d}"
 
-    Parameters:
-        wavefront: NDArray[np.complex64]
-            Wavefront
-        λ: float = 632.992
-            Wavelength
 
-    Returns: NDArray[np.float64]:
-        Phase delay of the wavefront
-    """
-    return λ * (np.angle(wavefront) + np.pi) / (2 * np.pi)
+def overlay_info_string(timestamp: float = datetime.datetime.now().timestamp(), exp_time_ms: int = 0, gain: float = 0, rate: float = 0, temp: float = 0, br: Tuple[int, int] = (0, 0), tl: Tuple[int, int] = (0, 0), frame: int = 0, event: int = 0):
+    return f"Time     : {timestamp_string(timestamp)}\nExp Time : {exp_time_ms}\nGain     : {gain}\nRate     : {rate}\nTemp     : {temp}\nROI\n br      : [{br[0]},{br[1]}]\n tl      : [{tl[0]},{tl[1]}]\nFrame    : {frame}\nEvent    : {event}\n"
