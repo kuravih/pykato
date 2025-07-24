@@ -1,12 +1,38 @@
 import unittest
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
 from pykato.plotfunction import preset
-from pykato.function import checkers, sinusoid, vortex, box, disk, gauss2d, airy, polka, register, text, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates
+from pykato.function import checkers, sinusoid, vortex, box, disk, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient
 import numpy as np
 
 
 class TestFunction(unittest.TestCase):
     # pylint: disable=missing-class-docstring
+
+    def test_generate_coordinates(self):
+        xx, yy, rr, θθ = generate_coordinates((100, 100), cartesian=True, polar=True)
+        self.assertIsInstance(xx, np.ndarray, "Array not returned by function.checkers()")
+        self.assertIsInstance(yy, np.ndarray, "Array not returned by function.checkers()")
+        self.assertIsInstance(rr, np.ndarray, "Array not returned by function.checkers()")
+        self.assertIsInstance(θθ, np.ndarray, "Array not returned by function.checkers()")
+
+        figure = preset.Imshow_Preset(xx)
+        figure.savefig("tests/output/function_generate_coordinates_xx.png")
+
+        figure = preset.Imshow_Preset(yy)
+        figure.savefig("tests/output/function_generate_coordinates_yy.png")
+
+        figure = preset.Imshow_Preset(rr)
+        figure.savefig("tests/output/function_generate_coordinates_rr.png")
+
+        figure = preset.Imshow_Preset(θθ)
+        figure.savefig("tests/output/function_generate_coordinates_θθ.png")
+
+    def test_gradient(self):
+        data = gradient((100, 100), np.pi/4)
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.checkers()")
+
+        figure = preset.Imshow_Preset(data)
+        figure.savefig("tests/output/function_gradient.png")
 
     def test_checkers(self):
         data = checkers((100, 100), (25, 25), (-12.5, 12.5))
@@ -16,7 +42,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_checkers.png")
 
     def test_sinusoid(self):
-        data = sinusoid((200, 200), 25, 90, 45)
+        data = sinusoid((200, 200), 10*np.pi, 0, np.pi/4)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.sinusoid()")
 
         figure = preset.Imshow_Preset(data)
@@ -79,7 +105,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_register.png")
 
     def test_text(self):
-        data = text((200, 200), "test", (100, 100), 100)
+        data = text((200, 200), "TEST", (100, 100), 100)
         print(f"data min {np.min(data)}")
         print(f"data max {np.max(data)}")
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.character()")
@@ -87,6 +113,16 @@ class TestFunction(unittest.TestCase):
         figure = preset.Imshow_Preset(data)
         figure.get_image().set_clim(0, 1.0)
         figure.savefig("tests/output/function_text.png")
+
+    def test_preroll(self):
+        data = preroll((200, 200), 1, 0.125, 100)
+        print(f"data min {np.min(data)}")
+        print(f"data max {np.max(data)}")
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.character()")
+
+        figure = preset.Imshow_Preset(data)
+        figure.get_image().set_clim(0, 1.0)
+        figure.savefig("tests/output/function_preroll.png")
 
     def test_linear2D(self):
         data = linear2d((200, 200), 3, 2, 1)

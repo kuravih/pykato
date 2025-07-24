@@ -5,13 +5,13 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import curve_fit
-from scipy import special
+from scipy import special, ndimage
 from skimage import morphology
 from skimage.feature import peak_local_max
 from skimage.measure import regionprops, label
 from skimage.restoration import unwrap_phase
 from PIL import Image, ImageDraw, ImageFont
-from .resource import FONT_PROGGY_CLEAN
+from .resource import FONT_PROGGY_CLEAN, FONT_DONGLE_LIGHT
 import datetime
 
 
@@ -20,9 +20,9 @@ def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (
     Create coordinate grids.
 
     Examples:
-        xx,yy,rr,θθ = generate_coordinates((200,200), True, True)
-        xx,yy = generate_coordinates((200,200), cartesian=True)
-        rr,θθ = generate_coordinates((200,200), polar=True)
+        xx, yy, rr, θθ = generate_coordinates((200, 200), cartesian=True, polar=True)
+        xx, yy = generate_coordinates((200, 200), cartesian=True)
+        rr, θθ = generate_coordinates((200, 200), polar=True)
 
     Parameters:
         shape: Tuple[int, int]
@@ -62,7 +62,7 @@ def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (
         return xx, yy, rr, θθ
 
 
-def gradient(shape: Tuple[int, int], angle: float) -> np.ndarray:
+def gradient(shape: Tuple[int, int], angle: float = 0, normalize: bool = True) -> np.ndarray:
     """
     Create a gradient pattern image bounded within [-1, 1].
 
@@ -73,14 +73,17 @@ def gradient(shape: Tuple[int, int], angle: float) -> np.ndarray:
         shape: Tuple[int, int]
             Image shape.
         angle: float
-            Angle of the gradient in degrees
+            Angle of the gradient in radians
 
     Returns: np.ndarray
         Image of the gradient pattern.
     """
     xx, yy = generate_coordinates(shape, cartesian=True)
-    grad = xx * np.cos(np.deg2rad(angle)) + yy * np.sin(np.deg2rad(angle))
-    return (grad - np.nanmin(grad)) / (np.nanmax(grad) - np.nanmin(grad))
+    grad = xx * np.cos(angle) + yy * np.sin(angle)
+    if normalize:
+        return (grad - np.nanmin(grad)) / (np.nanmax(grad) - np.nanmin(grad))
+    else:
+        return grad
 
 
 def checkers(shape: Tuple[int, int], size: Tuple[int, int], offset: Tuple[int, int] = (0, 0)) -> np.ndarray:
@@ -124,20 +127,20 @@ def sinusoid(shape: Tuple[int, int], period: float, phase: float, angle: float) 
         period: float
             Period of the sinusoid in pixels.
         phase: float
-            Phase of the sinusoid in degrees.
+            Phase of the sinusoid in radians.
         angle: float
-            Angle of the sinusoid in degrees.
+            Angle of the sinusoid in radians.
 
     Returns: np.ndarray
         Image of the sinusoidal pattern.
         The mean is 0.0 and the amplitude is 1.0 (i.e min = -1.0, max = +1.0)
     """
-    xx, yy = generate_coordinates(shape, cartesian=True)
-    pp = (2 * np.pi * (xx * np.cos(np.deg2rad(angle)) + yy * np.sin(np.deg2rad(angle)))) / period
-    return np.sin(pp + np.deg2rad(phase))
+    pp = 2 * np.pi * gradient(shape, angle, False)
+    ff = (1/period)
+    return np.sin(ff*pp + phase)
 
 
-def vortex(shape: Tuple[int, int], charge: int) -> np.ndarray:
+def vortex(shape: Tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarray:
     """
     Create a Vortex pattern image.
 
@@ -149,13 +152,20 @@ def vortex(shape: Tuple[int, int], charge: int) -> np.ndarray:
             Image shape.
         charge: int
             Charge of the vortex.
+        angle: float
+            Angle of the vortex.
 
     Returns: np.ndarray
         Image of the vortex pattern.
     """
     image_width, image_height = shape
     xx, yy = generate_coordinates(shape, (0.5 - image_width / 2, 0.5 - image_height / 2), True)
-    return (((charge * np.arctan2(xx, yy)) / np.pi) + 1) / 2
+    # Apply rotation
+    cos_a = np.cos(angle)
+    sin_a = np.sin(angle)
+    xx_rot = cos_a * xx - sin_a * yy
+    yy_rot = sin_a * xx + cos_a * yy
+    return (((charge * np.arctan2(yy_rot, xx_rot)) / np.pi) + 1) / 2
 
 
 def box(shape: Tuple[int, int], size: Tuple[int, int], center: Tuple[float, float] = (0, 0)) -> np.ndarray:
@@ -252,7 +262,7 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         ξc: float
             Period of the sinusoid (along the EFCProbeDirection).
         θ: float
-            Phase of the sinusoid (along the EFCProbeDirection) in degrees.
+            Phase of the sinusoid (along the EFCProbeDirection) in radians.
 
     Returns: np.ndarray
         Image of the EFC probe pattern.
@@ -263,7 +273,7 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         _2pi_xx = 2 * np.pi * xx
         _2pi_yy = 2 * np.pi * yy
         _invξc_2pi_xx = (1 / ξc) * _2pi_xx
-        return (np.sinc(dξ * _2pi_xx) * np.sinc(dη * _2pi_yy) * np.sin(_invξc_2pi_xx + np.deg2rad(θ)) + 1) / 2
+        return (np.sinc(dξ * _2pi_xx) * np.sinc(dη * _2pi_yy) * np.sin(_invξc_2pi_xx + θ) + 1) / 2
 
     if direction == EFCProbeDirection.HORIZONTAL:
         return _efc_probe(shape, dξ, dη, ξc, θ)
@@ -313,7 +323,7 @@ def gauss2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float]
         width: Tuple[float, float]
             2D width of the gaussian.
         tilt: float
-            Tilt angle in degrees.
+            Tilt angle in radians.
 
     Returns: np.ndarray
             image of the gaussian.
@@ -321,7 +331,6 @@ def gauss2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float]
     xx, yy = xx_yy
     x0, y0 = center
     u, v = width
-    tilt = np.deg2rad(tilt)
     _a = (np.cos(tilt) ** 2) / (2 * u**2) + (np.sin(tilt) ** 2) / (2 * v**2)
     _b = -(np.sin(2 * tilt)) / (4 * u**2) + (np.sin(2 * tilt)) / (4 * v**2)
     _c = (np.sin(tilt) ** 2) / (2 * u**2) + (np.cos(tilt) ** 2) / (2 * v**2)
@@ -456,26 +465,41 @@ def text(shape: Tuple[int, int], string: str, position: Optional[Tuple[float, fl
     Returns: np.ndarray
         Image of the character string.
     """
-    # Create a blank white image
-    img = Image.new("L", shape, color=255)
+
+    img = Image.new("L", shape, color=255)  # Create a blank white image
     draw = ImageDraw.Draw(img)
 
     if font_size is None:
         font_size = min(shape)
 
-    font = ImageFont.truetype(FONT_PROGGY_CLEAN, font_size)
+    font = ImageFont.truetype(FONT_DONGLE_LIGHT, font_size)
 
-    bbox_size = font.getbbox(string)
-
-    # Center if position not specified
     if position is None:
-        position = ((shape[0] - bbox_size[0]) / 2, (shape[1] + bbox_size[1]) / 2)
+        position = (shape[0] / 2, shape[1] / 2)
 
-    # Draw the character
-    draw.text(position, string, font=font, fill=0, anchor="mm")
+    draw.text(position, string, align="center", font=font, fill=0, anchor="mm")  # Draw string
 
-    # Convert to numpy array
-    return np.array(img) / 255.0
+    return np.array(img) / 255.0  # Convert to numpy array
+
+
+def preroll(shape: Tuple[int, int], count: int, percent: float = 0, font_size: Optional[int] = None) -> np.ndarray:
+    """
+    Create a pre roll image of a count down.
+
+    Example:
+        image_character = character((200,200), 1, 0.25)
+
+    Parameters:
+        shape: Tuple[int, int]
+            Image shape.
+        count: int
+            Number to be displayed.
+        percent: float
+            Percentage of completion.
+    Returns: np.ndarray
+        Image of pre-roll screen.
+    """
+    return (text(shape, f"{count:02d}", position=(0.5 * shape[0], 0.57 * shape[1]), font_size=font_size) + vortex(shape, 1, percent * 2 * np.pi)) / 2
 
 
 def airy_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], radius: float, height: float):
@@ -902,3 +926,18 @@ def timestamp_string(timestamp: float = datetime.datetime.now().timestamp(), frm
 
 def overlay_info_string(timestamp: float = datetime.datetime.now().timestamp(), exp_time_ms: int = 0, gain: float = 0, rate: float = 0, temp: float = 0, br: Tuple[int, int] = (0, 0), tl: Tuple[int, int] = (0, 0), frame: int = 0, event: int = 0):
     return f"Time     : {timestamp_string(timestamp)}\nExp Time : {exp_time_ms}\nGain     : {gain}\nRate     : {rate}\nTemp     : {temp}\nROI\n br      : [{br[0]},{br[1]}]\n tl      : [{tl[0]},{tl[1]}]\nFrame    : {frame}\nEvent    : {event}\n"
+
+
+def RadialAverage(image, center=(0, 0)):
+    width, height = image.shape
+
+    if not (center):
+        center = tuple(np.array(image.shape) // 2)
+
+    xx, yy = np.ogrid[0:width, 0:height]
+    rr = np.hypot(xx - center[0], yy - center[1]).astype(np.uint64)
+
+    r = np.arange(0, np.max(rr))
+    avg = ndimage.mean(image, rr, index=r)
+
+    return r, avg

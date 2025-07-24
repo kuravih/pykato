@@ -9,3 +9,5 @@ def get_path(filename):
 
 
 FONT_PROGGY_CLEAN = get_path("ProggyClean.ttf")
+FONT_DONGLE_LIGHT = get_path("Dongle-Light.ttf")
+
