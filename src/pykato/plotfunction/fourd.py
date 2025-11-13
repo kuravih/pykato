@@ -1,4 +1,3 @@
-from typing import Optional
 from matplotlib.image import AxesImage
 from matplotlib.figure import Figure
 from pykato.plotfunction import preset
@@ -6,7 +5,7 @@ from pykato.fourd import Measurement
 import numpy as np
 
 
-def Measurement_Preset(data: Measurement, mask: Optional[np.ndarray] = None, figure: Optional[Figure] = None) -> Figure:
+def Measurement_Preset(data: Measurement, mask: np.ndarray | None = None, figure: Figure | None = None) -> Figure:
     """
     FourD measurement layout
 
@@ -16,9 +15,9 @@ def Measurement_Preset(data: Measurement, mask: Optional[np.ndarray] = None, fig
     Parameters:
         data: Measurement
             FourD measurement.
-        mask: Optional[np.ndarray] = None
+        mask: np.ndarray | None = None
             Mask
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
@@ -59,7 +58,7 @@ def Measurement_Preset(data: Measurement, mask: Optional[np.ndarray] = None, fig
     return figure
 
 
-def Measurement_Zernike_Preset(data: Measurement, mask: Optional[np.ndarray] = None, figure: Optional[Figure] = None) -> Figure:
+def Measurement_Zernike_Preset(data: Measurement, mask: np.ndarray | None = None, figure: Figure | None = None) -> Figure:
     """
     FourD measurement layout with zernike plot
 
@@ -69,9 +68,9 @@ def Measurement_Zernike_Preset(data: Measurement, mask: Optional[np.ndarray] = N
     Parameters:
         data: Measurement
             FourD measurement.
-        mask: Optional[np.ndarray] = None
+        mask: np.ndarray | None = None
             Mask
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: plt.Figure

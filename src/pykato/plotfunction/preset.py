@@ -1,5 +1,3 @@
-from typing import Tuple, Optional, List
-
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
@@ -11,12 +9,13 @@ from matplotlib.colorbar import ColorbarBase
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from matplotlib import colormaps
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from fractions import Fraction
 
 import numpy as np
 from numpy.typing import NDArray
 
 
-def Imshow_Preset(image: NDArray[np.float64], figure: Optional[Figure] = None) -> Figure:
+def Imshow_Preset(image: NDArray[np.float64], figure: Figure | None = None) -> Figure:
     """
     Preset with a single Imshow axis
 
@@ -27,7 +26,7 @@ def Imshow_Preset(image: NDArray[np.float64], figure: Optional[Figure] = None) -
         image: NDArray[np.float64]
             Image data.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
@@ -75,7 +74,7 @@ def Imshow_Preset(image: NDArray[np.float64], figure: Optional[Figure] = None) -
     return figure
 
 
-def _complex_to_plot_abs_arg(zdata: NDArray[np.complex64]) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+def _complex_to_plot_abs_arg(zdata: NDArray[np.complex64]) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     arg_image = np.angle(zdata) / np.pi
     _abs = np.abs(zdata)
     _abs = (_abs - np.nanmin(_abs)) / (np.nanmax(_abs) - np.nanmin(_abs))
@@ -83,7 +82,7 @@ def _complex_to_plot_abs_arg(zdata: NDArray[np.complex64]) -> Tuple[NDArray[np.f
     return abs_image, arg_image
 
 
-def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure] = None) -> Figure:
+def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Figure | None = None) -> Figure:
     """
     Preset with a single Imshow axis for complex fields.
 
@@ -94,7 +93,7 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure
         zdata: NDArray[np.complex64]
             Complex field data.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
@@ -167,7 +166,7 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure
     return figure
 
 
-def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Optional[Figure] = None) -> Figure:
+def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = None) -> Figure:
     """
     Preset with an Imshow axis and a colorbar axis.
 
@@ -178,7 +177,7 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Optional[Figure] 
         data: NDArray[np.float64]
             Image data.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
@@ -202,7 +201,7 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Optional[Figure] 
         figure = plt.figure()
 
     cmap = plt.cm.viridis.copy()
-    cmap.set_bad(color='black')
+    cmap.set_bad(color="black")
     # cmap.set_over("red")  # Set color for values exceeding the colormap range
 
     imshow_ax = figure.gca()
@@ -245,18 +244,27 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Optional[Figure] 
 
 
 def _pi_formatter(val: float, pos) -> str:
-    num, den = abs(val).as_integer_ratio()
-    sign = "" if (val >= 0) else "-"
-    num_str = "\\pi" if (num == 1) else f"{num}\\pi"
-    if num == 0:
+    if abs(val) < 1e-10:  # Handle values very close to zero
         return "0"
-    elif den == 1:
-        return f"${sign}{num_str}$"
+
+    fraction_of_pi = Fraction(val / np.pi).limit_denominator()  # Convert to fraction of π
+
+    sign = "" if fraction_of_pi >= 0 else "-"
+    abs_frac = abs(fraction_of_pi)
+
+    if abs_frac.numerator == 0:
+        return "0"
+    elif abs_frac.numerator == 1 and abs_frac.denominator == 1:
+        return f"${sign}\\pi$"
+    elif abs_frac.numerator == 1:
+        return f"${sign}\\frac{{ \\pi }}{{ {abs_frac.denominator} }}$"
+    elif abs_frac.denominator == 1:
+        return f"${sign}{abs_frac.numerator}\\pi$"
     else:
-        return f"${sign}\\frac{{ {num_str} }}{{ {den} }}$"
+        return f"${sign}\\frac{{ {abs_frac.numerator}\\pi }}{{ {abs_frac.denominator} }}$"
 
 
-def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Optional[Figure] = None) -> Figure:
+def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Figure | None = None) -> Figure:
     """
     Preset with an Imshow axis and two colorbar axes.
 
@@ -267,7 +275,7 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Op
         zimage: NDArray[np.complex64]
             Complex field data.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
@@ -343,7 +351,7 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Op
     return figure
 
 
-def ImageGrid_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure] = None) -> Figure:
+def ImageGrid_Preset(images: list[NDArray[np.float64]], figure: Figure | None = None) -> Figure:
     """
     Preset with a grid of imshow axes.
 
@@ -351,17 +359,17 @@ def ImageGrid_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure]
         figure = ImageGrid_Preset([data1, data2, data3])
 
     Parameters:
-        images: List[NDArray[np.float64]]
+        images: list[NDArray[np.float64]]
             List of images
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
             Figure object with the imshow axis.
 
     Functions:
-        get_images(): List[AxesImage]
+        get_images(): list[AxesImage]
             Get imshow image.
 
         get_images()[index].set_data(image: NDArray[np.float64])
@@ -391,7 +399,7 @@ def ImageGrid_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure]
         imshow_images.append(imshow_image)
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _plot(xys: List[Tuple[np.float64, np.float64]], *args, **kwargs) -> None:
+    def _plot(xys: list[tuple[np.float64, np.float64]], *args, **kwargs) -> None:
         for (x, y), imshow_axis in zip(xys, imshow_axes):
             imshow_axis.plot(x, y, *args, **kwargs)
 
@@ -399,7 +407,7 @@ def ImageGrid_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure]
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> List[AxesImage]:
+    def _get_images() -> list[AxesImage]:
         return imshow_images
 
     figure.get_images = _get_images
@@ -438,7 +446,7 @@ def ImageGrid_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure]
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> List[Axes]:
+    def _get_imshow_axes() -> list[Axes]:
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
@@ -454,7 +462,7 @@ def ImageGrid_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure]
     return figure
 
 
-def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optional[Figure] = None) -> Figure:
+def ImageGrid_Colorbar_Preset(images: list[NDArray[np.float64]], figure: Figure | None = None) -> Figure:
     """
     Preset with a grid of imshow axes and a colorbar.
 
@@ -462,20 +470,20 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
         figure = preset.ImageGrid_Colorbar_Preset((data1, data2, data3))
 
     Parameters:
-        data: List[np.ndarray]
+        data: list[np.ndarray]
             Images
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
             Figure object with the imshow axis.
 
     Functions:
-        plot(yxs: Tuple[np.ndarray, ...], *args, **kwargs)
+        plot(yxs: tuple[np.ndarray, ...], *args, **kwargs)
             Plot on image grid
 
-        get_images(): List[AxesImage]
+        get_images(): list[AxesImage]
             Get imshow images.
 
         set_clim(*args, **kwargs)
@@ -493,7 +501,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
         set_ylabel(*args, **kwargs)
             Set ylabel.
 
-        get_imshow_axes(): List[Axes]
+        get_imshow_axes(): list[Axes]
             Get imshow exex
 
         get_cbar_ax(): Axis
@@ -507,7 +515,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
         figure = plt.figure()
 
     cmap = plt.cm.viridis.copy()
-    cmap.set_bad(color='black')
+    cmap.set_bad(color="black")
 
     imshow_ax = figure.gca()
     divider = make_axes_locatable(imshow_ax)
@@ -529,7 +537,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     figure.colorbar(imshow_image, cax=colorbar_ax)
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _plot(xys: List[Tuple[np.float64, np.float64]], *args, **kwargs) -> None:
+    def _plot(xys: list[tuple[np.float64, np.float64]], *args, **kwargs) -> None:
         for (x, y), imshow_axis in zip(xys, imshow_axes):
             imshow_axis.plot(x, y, *args, **kwargs)
 
@@ -537,7 +545,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> List[AxesImage]:
+    def _get_images() -> list[AxesImage]:
         return imshow_images
 
     figure.get_images = _get_images
@@ -576,13 +584,13 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> List[Axes]:
+    def _get_imshow_axes() -> list[Axes]:
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
     # -----------------------------------------------------------------------------------------------------------------
 
-        # -----------------------------------------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------------------------------------
     def _get_cbar_ax() -> Axes:
         return colorbar_ax
 
@@ -599,7 +607,7 @@ def ImageGrid_Colorbar_Preset(images: List[NDArray[np.float64]], figure: Optiona
     return figure
 
 
-def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], figure: Optional[Figure] = None) -> Figure:
+def Complex_ImageGrid_TwoColorbars_Preset(zimage: list[NDArray[np.complex64]], figure: Figure | None = None) -> Figure:
     """
     Preset with grid of Imshow axes and two colorbar axes.
 
@@ -607,17 +615,17 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
         figure = preset.Complex_Imshow_TwoColorbars_Preset(data)
 
     Parameters:
-        zimage: List[NDArray[np.complex64]]
+        zimage: list[NDArray[np.complex64]]
             Complex field data.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
             Figure object with the imshow axis.
 
     Functions:
-        plot(yxs: Tuple[np.ndarray, ...], *args, **kwargs)
+        plot(yxs: tuple[np.ndarray, ...], *args, **kwargs)
             Plot on image grid
 
         get_image().set_data(zdata)
@@ -668,9 +676,10 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
 
     # -----------------------------------------------------------------------------------------------------------------
     plots = []
-    def _plot(xys: List[Tuple[np.float64, np.float64]], *args, **kwargs) -> None:
+
+    def _plot(xys: list[tuple[np.float64, np.float64]], *args, **kwargs) -> None:
         for (x, y), imshow_axis in zip(xys, imshow_axes):
-            plot, = imshow_axis.plot(x, y, *args, **kwargs)
+            (plot,) = imshow_axis.plot(x, y, *args, **kwargs)
             plots.append(plot)
 
     figure.plot = _plot
@@ -694,7 +703,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> List[AxesImage]:
+    def _get_images() -> list[AxesImage]:
         return imshow_images
 
     figure.get_images = _get_images
@@ -733,7 +742,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> List[Axes]:
+    def _get_imshow_axes() -> list[Axes]:
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
@@ -749,7 +758,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: List[NDArray[np.complex64]], f
     return figure
 
 
-def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], NDArray[np.float64]], figure: Optional[Figure] = None) -> Figure:
+def Imshow_Colorbar_Imshow_Colorbar_Preset(images: tuple[NDArray[np.float64], NDArray[np.float64]], figure: Figure | None = None) -> Figure:
     """
     Preset with two Imshow axis and Colorbar axis pairs.
 
@@ -757,23 +766,23 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], ND
         figure = preset.Imshow_Colorbar_Imshow_Colorbar_Preset((imageA, imageB))
 
     Parameters:
-        data: Tuple[NDArray[np.float64], NDArray[np.float64]]
+        data: tuple[NDArray[np.float64], NDArray[np.float64]]
             Tuple of two images.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
             Figure object with the imshow axis.
 
     Functions:
-        get_images(): List[AxesImage]
+        get_images(): list[AxesImage]
             Get imshow image.
 
         get_images()[index].set_data(image:NDArray[np.float64])
             Get imshow image.
 
-        get_imshow_axes(): List[Axis]
+        get_imshow_axes(): list[Axis]
             Get imshow axis.
 
         close()
@@ -784,8 +793,8 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], ND
         figure = plt.figure()
 
     cmap = plt.cm.viridis.copy()
-    cmap.set_bad(color='black')
-    cmap.set_over("red")  
+    cmap.set_bad(color="black")
+    cmap.set_over("red")
 
     image_a, image_b = images
 
@@ -810,14 +819,14 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], ND
     colorbar_axes = [colorbar_ax_a, colorbar_ax_b]
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> List[AxesImage]:
+    def _get_images() -> list[AxesImage]:
         return imshow_images
 
     figure.get_images = _get_images
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> List[Axis]:
+    def _get_imshow_axes() -> list[Axis]:
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
@@ -840,7 +849,7 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: Tuple[NDArray[np.float64], ND
     return figure
 
 
-def Histogram_Colorbar_Preset(data: np.ndarray, figure: Optional[Figure] = None, nbins=256, vmin: float = 0, vmax: float = 1.0, cmap: str = "viridis", position: str = "right") -> Figure:
+def Histogram_Colorbar_Preset(data: np.ndarray, figure: Figure | None = None, nbins=256, vmin: float = 0, vmax: float = 1.0, cmap: str = "viridis", position: str = "right") -> Figure:
     """
     Preset with an Simple axis and a colorbar axis.
     Suitable for visualizing histograms of color data.
@@ -852,7 +861,7 @@ def Histogram_Colorbar_Preset(data: np.ndarray, figure: Optional[Figure] = None,
         data: np.ndarray
             Image data.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
@@ -954,7 +963,7 @@ def Histogram_Colorbar_Preset(data: np.ndarray, figure: Optional[Figure] = None,
     return figure
 
 
-def Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset(data: Tuple[NDArray[np.float64], NDArray[np.float64]], figure: Optional[Figure] = None) -> Figure:
+def Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset(data: tuple[NDArray[np.float64], NDArray[np.float64]], figure: Figure | None = None) -> Figure:
     """
     Preset with two Imshow axis and Colorbar axis pairs and two axis for plots
 
@@ -962,26 +971,26 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset(data: Tuple[NDArray[np.floa
         figure = preset.Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset((imageA, imageB))
 
     Parameters:
-        data: Tuple[NDArray[np.float64], NDArray[np.float64]]
+        data: tuple[NDArray[np.float64], NDArray[np.float64]]
             Tuple of two images.
 
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
             Figure object with the imshow axis.
 
     Functions:
-        get_images(): List[AxesImage]
+        get_images(): list[AxesImage]
             Get imshow image.
 
         get_images()[index].set_data(image: NDArray[np.float64])
             Set imshow image.
 
-        get_imshow_axes(): List[Axis]
+        get_imshow_axes(): list[Axis]
             Get imshow axis.
 
-        get_plot_axes(): List[Axis]
+        get_plot_axes(): list[Axis]
             Get plot axis.
 
         get_cbar_ax(): Axes
@@ -1028,28 +1037,28 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset(data: Tuple[NDArray[np.floa
     colorbar_axes = [colorbar_ax_a, colorbar_ax_b]
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> List[AxesImage]:
+    def _get_images() -> list[AxesImage]:
         return imshow_images
 
     figure.get_images = _get_images
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> List[Axes]:
+    def _get_imshow_axes() -> list[Axes]:
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_plot_axes() -> List[Axes]:
+    def _get_plot_axes() -> list[Axes]:
         return plot_axes
 
     figure.get_plot_axes = _get_plot_axes
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_cbar_axes() -> List[Axis]:
+    def _get_cbar_axes() -> list[Axis]:
         return colorbar_axes
 
     figure.get_cbar_axes = _get_cbar_axes
@@ -1065,7 +1074,7 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset(data: Tuple[NDArray[np.floa
     return figure
 
 
-def Imshow_Colorbar_Imshow_Colorbar_Plot_Preset(data: Tuple[NDArray[np.float64], NDArray[np.float64]], figure: Optional[Figure] = None) -> Figure:
+def Imshow_Colorbar_Imshow_Colorbar_Plot_Preset(data: tuple[NDArray[np.float64], NDArray[np.float64]], figure: Figure | None = None) -> Figure:
     """
     Preset with two Imshow axis and Colorbar axis pairs and two axis for plots
 
@@ -1073,22 +1082,22 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Preset(data: Tuple[NDArray[np.float64],
         figure = preset.Imshow_Colorbar_Imshow_Colorbar_Plot_Preset((imageA, imageB))
 
     Parameters:
-        data: Tuple[np.ndarray, np.ndarray]
+        data: tuple[np.ndarray, np.ndarray]
             Tuple of two images.
-        figure: Optional[Figure] = None
+        figure: Figure | None = None
             Figure object.
 
     Returns: Figure
             Figure object with the imshow axis.
 
     Functions:
-        get_images(): List[AxesImage]
+        get_images(): list[AxesImage]
             Get imshow image.
 
         get_images()[index].set_data(image: NDArray[np.float64])
             Set imshow image.
 
-        get_imshow_axes(): List[Axis]
+        get_imshow_axes(): list[Axis]
             Get imshow axis.
 
         get_plot_axes(): Axis
@@ -1135,14 +1144,14 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Preset(data: Tuple[NDArray[np.float64],
     colorbar_axes = [colorbar_ax_a, colorbar_ax_b]
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> List[AxesImage]:
+    def _get_images() -> list[AxesImage]:
         return imshow_images
 
     figure.get_images = _get_images
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> List[Axes]:
+    def _get_imshow_axes() -> list[Axes]:
         return imshow_axes
 
     figure.get_imshow_axes = _get_imshow_axes
@@ -1156,7 +1165,7 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Preset(data: Tuple[NDArray[np.float64],
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_cbar_axes() -> List[Axis]:
+    def _get_cbar_axes() -> list[Axis]:
         return colorbar_axes
 
     figure.get_cbar_axes = _get_cbar_axes

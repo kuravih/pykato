@@ -1,4 +1,3 @@
-from typing import Tuple, Optional, List
 from enum import Enum, IntEnum, auto
 
 import numpy as np
@@ -11,11 +10,11 @@ from skimage.feature import peak_local_max
 from skimage.measure import regionprops, label
 from skimage.restoration import unwrap_phase
 from PIL import Image, ImageDraw, ImageFont
-from .resource import FONT_PROGGY_CLEAN, FONT_DONGLE_LIGHT
+from .resource import FONT_DONGLE_LIGHT
 import datetime
 
 
-def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (0, 0), cartesian: bool = False, polar: bool = False) -> Tuple[np.ndarray, ...]:
+def generate_coordinates(shape: tuple[int, int], offset: tuple[float, float] = (0, 0), cartesian: bool = False, polar: bool = False) -> tuple[np.ndarray, ...]:
     """
     Create coordinate grids.
 
@@ -25,16 +24,16 @@ def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (
         rr, θθ = generate_coordinates((200, 200), polar=True)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
-        offset: Tuple[float, float] = (0, 0)
+        offset: tuple[float, float] = (0, 0)
             Offset of origin.
         cartesian: bool = False
             Return cartesian coordinate grid.
         polar: bool = False
             Return polar coordinate grid.
 
-    Returns: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    Returns: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
         X coordinates.
         Y coordinates.
         R coordinates.
@@ -62,7 +61,7 @@ def generate_coordinates(shape: Tuple[int, int], offset: Tuple[float, float] = (
         return xx, yy, rr, θθ
 
 
-def gradient(shape: Tuple[int, int], angle: float = 0, normalize: bool = True) -> np.ndarray:
+def gradient(shape: tuple[int, int], angle: float = 0, normalize: bool = True) -> np.ndarray:
     """
     Create a gradient pattern image bounded within [-1, 1].
 
@@ -70,7 +69,7 @@ def gradient(shape: Tuple[int, int], angle: float = 0, normalize: bool = True) -
         image_checkers = gradient((200,200), 45)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         angle: float
             Angle of the gradient in radians
@@ -86,7 +85,7 @@ def gradient(shape: Tuple[int, int], angle: float = 0, normalize: bool = True) -
         return grad
 
 
-def checkers(shape: Tuple[int, int], size: Tuple[int, int], offset: Tuple[int, int] = (0, 0)) -> np.ndarray:
+def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, int] = (0, 0)) -> np.ndarray:
     """
     Create a checker pattern image.
 
@@ -94,11 +93,11 @@ def checkers(shape: Tuple[int, int], size: Tuple[int, int], offset: Tuple[int, i
         image_checkers = checkers((200,200), (100,100), (50, -50))
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
-        size: Tuple[int, int]
+        size: tuple[int, int]
             Checker size.
-        offset: Tuple[int, int] = (0, 0)
+        offset: tuple[int, int] = (0, 0)
             Origin offset.
 
     Returns: np.ndarray
@@ -114,7 +113,7 @@ def checkers(shape: Tuple[int, int], size: Tuple[int, int], offset: Tuple[int, i
     return np.logical_xor(xx_steps, yy_steps)
 
 
-def sinusoid(shape: Tuple[int, int], period: float, phase: float, angle: float) -> np.ndarray:
+def sinusoid(shape: tuple[int, int], period: float, phase: float, angle: float) -> np.ndarray:
     """
     Create a sinusoidal pattern image.
 
@@ -122,7 +121,7 @@ def sinusoid(shape: Tuple[int, int], period: float, phase: float, angle: float) 
         image_sinusoid = sinusoid((200,200), 10, 20, 60)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         period: float
             Period of the sinusoid in pixels.
@@ -136,11 +135,11 @@ def sinusoid(shape: Tuple[int, int], period: float, phase: float, angle: float) 
         The mean is 0.0 and the amplitude is 1.0 (i.e min = -1.0, max = +1.0)
     """
     pp = 2 * np.pi * gradient(shape, angle, False)
-    ff = (1/period)
-    return np.sin(ff*pp + phase)
+    ff = 1 / period
+    return np.sin(ff * pp + phase)
 
 
-def vortex(shape: Tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarray:
+def vortex(shape: tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarray:
     """
     Create a Vortex pattern image.
 
@@ -148,7 +147,7 @@ def vortex(shape: Tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarra
         image_vortex = vortex((200,200), 6)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         charge: int
             Charge of the vortex.
@@ -168,7 +167,7 @@ def vortex(shape: Tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarra
     return (((charge * np.arctan2(yy_rot, xx_rot)) / np.pi) + 1) / 2
 
 
-def box(shape: Tuple[int, int], size: Tuple[int, int], center: Tuple[float, float] = (0, 0)) -> np.ndarray:
+def box(shape: tuple[int, int], size: tuple[int, int], center: tuple[float, float] = (0, 0)) -> np.ndarray:
     """
     Create a box pattern image.
 
@@ -176,11 +175,11 @@ def box(shape: Tuple[int, int], size: Tuple[int, int], center: Tuple[float, floa
         image_box = box((200,200), (50,50), (100,100))
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
-        size: Tuple[int, int]
+        size: tuple[int, int]
             Size of the box.
-        center: Tuple[int, int] = (0, 0)
+        center: tuple[int, int] = (0, 0)
             Center of the box.
 
     Returns: np.ndarray
@@ -202,7 +201,7 @@ class DOTFProbeDirection(IntEnum):
         return f"{self.value:02d}"
 
 
-def dotf_probe(shape: Tuple[int, int], size: Tuple[int, int], direction: DOTFProbeDirection) -> np.ndarray:
+def dotf_probe(shape: tuple[int, int], size: tuple[int, int], direction: DOTFProbeDirection) -> np.ndarray:
     """
     Create a DOTF probe pattern image.
 
@@ -210,9 +209,9 @@ def dotf_probe(shape: Tuple[int, int], size: Tuple[int, int], direction: DOTFPro
         image_dotf_probe = dotf_probe((200,200), (4,11), DOTFProbeDirection.TOP)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
-        size: Tuple[int, int]
+        size: tuple[int, int]
             Size of the box.
         direction: DOTFProbeDirection
             direction of the probe.
@@ -245,7 +244,7 @@ class EFCProbeDirection(Enum):
         return self.name.lower()
 
 
-def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: float, direction: EFCProbeDirection) -> np.ndarray:
+def efc_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float, direction: EFCProbeDirection) -> np.ndarray:
     """
     Create a EFC probe pattern image.
 
@@ -253,7 +252,7 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         image_efc_probe = efc_probe((200,200), 0.01, 0.01, 90, 0, EFCProbeDirection.HORIZONTAL)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         dξ: float
             Probe rectangle size in (along the EFCProbeDirection).
@@ -268,7 +267,7 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         Image of the EFC probe pattern.
     """
 
-    def _efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
+    def _efc_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
         xx, yy = generate_coordinates(shape, cartesian=True, offset=(-shape[0] / 2 + 0.5, -shape[1] / 2 + 0.5))
         _2pi_xx = 2 * np.pi * xx
         _2pi_yy = 2 * np.pi * yy
@@ -281,7 +280,7 @@ def efc_probe(shape: Tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         return np.rot90(_efc_probe(shape, dξ, dη, ξc, θ))
 
 
-def disk(shape: Tuple[int, int], radius: float, center: Tuple[float, float] = (0, 0)) -> np.ndarray:
+def disk(shape: tuple[int, int], radius: float, center: tuple[float, float] = (0, 0)) -> np.ndarray:
     """
     Create a disk pattern image.
 
@@ -289,11 +288,11 @@ def disk(shape: Tuple[int, int], radius: float, center: Tuple[float, float] = (0
         image_disk = disk((200,200), 50, (100,100))
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         radius: float
             Radius of the disk.
-        center: Tuple[float, float] = (0, 0)
+        center: tuple[float, float] = (0, 0)
             Center of the disk.
 
     Returns: np.ndarray
@@ -304,7 +303,35 @@ def disk(shape: Tuple[int, int], radius: float, center: Tuple[float, float] = (0
     return rr < radius
 
 
-def gauss2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], offset: float, height: float, width: Tuple[float, float], tilt: float = 0):
+def chord(shape: tuple[int, int], radius: float, percent: float, angle: float, center: tuple[float, float] = (0, 0)) -> np.ndarray:
+    """
+    Create a disk pattern image.
+
+    Example:
+        image_disk = disk((200,200), 50, (100,100))
+
+    Parameters:
+        shape: tuple[int, int]
+            Image shape.
+        radius: float
+            Radius of the disk.
+        percent: float
+            Percentage of radius to cutoff.
+        angle: float
+            angle to cutoff.
+        center: tuple[float, float] = (0, 0)
+            Center of the disk.
+
+    Returns: np.ndarray
+        Image of the chord pattern.
+    """
+    disk_x_center, disk_y_center = center
+    xx, yy, rr, θθ = generate_coordinates(shape, (0.5 + disk_x_center, 0.5 + disk_y_center), cartesian=True, polar=True)
+    grad = xx * np.cos(angle) + yy * np.sin(angle)
+    return (rr < radius) & (grad < radius * 2 * percent)
+
+
+def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float], offset: float, height: float, width: tuple[float, float], tilt: float = 0):
     """
     2d gaussian function (used for fitting).
 
@@ -312,15 +339,15 @@ def gauss2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float]
         image_gauss = Gauss2d_fn(TODO: example)
 
     Parameters:
-        xx_yy: Tuple[np.ndarray, np.ndarray]
+        xx_yy: tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
-        center: Tuple[float, float]
+        center: tuple[float, float]
             Gaussian center coordinates.
         offset: float
             Offset.
         height: float
             Height of the gaussian peak.
-        width: Tuple[float, float]
+        width: tuple[float, float]
             2D width of the gaussian.
         tilt: float
             Tilt angle in radians.
@@ -337,7 +364,7 @@ def gauss2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float]
     return offset + height * np.exp(-(_a * (xx - x0) ** 2 + 2 * _b * (xx - x0) * (yy - y0) + _c * (yy - y0) ** 2))
 
 
-def gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width: Tuple[float, float] = (3, 3), center: Tuple[float, float] = (0, 0), tilt: float = 0):
+def gauss2d(shape: tuple[int, int], offset: float = 0, height: float = 1, width: tuple[float, float] = (3, 3), center: tuple[float, float] = (0, 0), tilt: float = 0):
     """
     Create a 2d gauss image.
 
@@ -345,15 +372,15 @@ def gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width:
         image_gauss = Gauss2d((200,200), offset=0, height=1, a=(50,25), x=(100,100), tilt=45)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         offset: float
             DC Offset.
         height: float
             Height of the gaussian peak.
-        width: Tuple[float, float]
+        width: tuple[float, float]
             2D width of the gaussian.
-        center: Tuple[float, float]
+        center: tuple[float, float]
             Gaussian center coordinates.
         tilt: float
             Tilt angle in degrees.
@@ -365,7 +392,7 @@ def gauss2d(shape: Tuple[int, int], offset: float = 0, height: float = 1, width:
     return gauss2d_fn((xx, yy), center, offset, height, width, tilt)
 
 
-def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], offset: Tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
+def polka(shape: tuple[int, int], radius: float, spacing: tuple[float, float], offset: tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
     """
     Create a polka dot pattern of 2d gaussian spots.
 
@@ -373,13 +400,13 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], o
         image_polka = polka((200,200), 3, (40,40), 0)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         radius: float
             Radius of a dot.
-        spacing: Tuple[float, float]
+        spacing: tuple[float, float]
             Spacing between dots
-        offset: Tuple[int, int] = (0, 0)
+        offset: tuple[int, int] = (0, 0)
             Origin offset.
 
     Returns: np.ndarray
@@ -402,7 +429,7 @@ def polka(shape: Tuple[int, int], radius: float, spacing: Tuple[float, float], o
         return image
 
 
-def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spacing: Tuple[float, float], center: Tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
+def register(shape: tuple[int, int], count: tuple[int, int], radius: float, spacing: tuple[float, float], center: tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
     """
     Create a polka dot pattern of 2d gaussian spots.
 
@@ -410,15 +437,15 @@ def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spac
         image_register = register((200,200), (4,4), 3, (40,40), 0)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
-        count: Tuple[int, int]
+        count: tuple[int, int]
             Number of dots.
         radius: float
             Radius of a dot.
-        spacing: Tuple[float, float]
+        spacing: tuple[float, float]
             Spacing between dots
-        center: Tuple[int, int] = (0, 0)
+        center: tuple[int, int] = (0, 0)
             Origin center.
 
     Returns: np.ndarray
@@ -445,7 +472,7 @@ def register(shape: Tuple[int, int], count: Tuple[int, int], radius: float, spac
         return image
 
 
-def text(shape: Tuple[int, int], string: str, position: Optional[Tuple[float, float]] = None, font_size: Optional[int] = None) -> np.ndarray:
+def text(shape: tuple[int, int], string: str, position: tuple[float, float] | None, font_size: int | None) -> np.ndarray:
     """
     Create an image of a string of characters.
 
@@ -453,13 +480,13 @@ def text(shape: Tuple[int, int], string: str, position: Optional[Tuple[float, fl
         image_character = character((200,200), '4', (100,100), (100,100))
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         string: str
             string to be rendered.
-        position: Optional[Tuple[float, float]] = None
+        position: tuple[float, float] | None
             Position of the character. If None, centers the character.
-        size: Optional[int] = None
+        font_size: int | None
             Size of the string. If None, auto-sizes to fit the image.
 
     Returns: np.ndarray
@@ -482,7 +509,7 @@ def text(shape: Tuple[int, int], string: str, position: Optional[Tuple[float, fl
     return np.array(img) / 255.0  # Convert to numpy array
 
 
-def preroll(shape: Tuple[int, int], count: int, percent: float = 0, font_size: Optional[int] = None) -> np.ndarray:
+def preroll(shape: tuple[int, int], count: int, percent: float = 0, font_size: int | None = None) -> np.ndarray:
     """
     Create a pre roll image of a count down.
 
@@ -490,7 +517,7 @@ def preroll(shape: Tuple[int, int], count: int, percent: float = 0, font_size: O
         image_character = character((200,200), 1, 0.25)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         count: int
             Number to be displayed.
@@ -502,7 +529,7 @@ def preroll(shape: Tuple[int, int], count: int, percent: float = 0, font_size: O
     return (text(shape, f"{count:02d}", position=(0.5 * shape[0], 0.57 * shape[1]), font_size=font_size) + vortex(shape, 1, percent * 2 * np.pi)) / 2
 
 
-def airy_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], radius: float, height: float):
+def airy_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float], radius: float, height: float):
     """
     2d airy function (used for fitting).
 
@@ -510,9 +537,9 @@ def airy_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], r
         image_airy = Airy_fn(TODO: example)
 
     Parameters:
-        xx_yy: Tuple[np.ndarray, np.ndarray]
+        xx_yy: tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
-        center: Tuple[float, float]
+        center: tuple[float, float]
             Gaussian center coordinates.
         radius: float
             Radius.
@@ -529,7 +556,7 @@ def airy_fn(xx_yy: Tuple[np.ndarray, np.ndarray], center: Tuple[float, float], r
     return height * np.where(r, (2 * special.jv(1, r) / r) ** 2, 1)
 
 
-def airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: float = 1, height: float = 1):
+def airy(shape: tuple[int, int], center: tuple[float, float] = (0, 0), radius: float = 1, height: float = 1):
     """
     Create a 2d Airy disk.
 
@@ -537,9 +564,9 @@ def airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: f
         image_airy = Airy2d(TODO: example)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
-        center: Tuple[float, float]
+        center: tuple[float, float]
             Gaussian center coordinates.
         radius: float
             Radius.
@@ -553,7 +580,7 @@ def airy(shape: Tuple[int, int], center: Tuple[float, float] = (0, 0), radius: f
     return airy_fn((xx, yy), center, radius, height)
 
 
-def linear2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], a: float, b: float, c: float):
+def linear2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], a: float, b: float, c: float):
     """
     2d plane function (used for fitting).
 
@@ -561,7 +588,7 @@ def linear2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], a: float, b: float, c: flo
         image_airy = Linear2d_fn(TODO: example)
 
     Parameters:
-        xx_yy: Tuple[np.ndarray, np.ndarray]
+        xx_yy: tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
         a: float
             Constant.
@@ -578,7 +605,7 @@ def linear2d_fn(xx_yy: Tuple[np.ndarray, np.ndarray], a: float, b: float, c: flo
     return a * xx + b * yy + c
 
 
-def linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
+def linear2d(shape: tuple[int, int], a: float, b: float, c: float):
     """
     Create a 2d plane.
 
@@ -586,7 +613,7 @@ def linear2d(shape: Tuple[int, int], a: float, b: float, c: float):
         image_plane = Linear2d(TODO: example)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         a: float
             Constant.
@@ -622,16 +649,16 @@ def least_squares_fit(y_data, model, guess_prms=None, bounds=(-np.inf, np.inf), 
             Fit function.
             The first parameter must be np.ndarray.
             The rest of the parameters must not be tuples.
-        guess_prms: Tuple[...]
+        guess_prms: tuple[...]
             guess parameters.
-        bounds: Tuple[List[...],List[...]]
+        bounds: tuple[list[...],list[...]]
             guess parameters. a tuple of two lists one upper and the other lower bounds.
         x_coord: np.ndarray
             x coordinates of the data set.
         mask: np.ndarray
             mask of value to fit to.
 
-    Returns: Tuple[Tuple[...], np.ndarray]
+    Returns: tuple[tuple[...], np.ndarray]
         fit parameters
         goodness of fit
     """
@@ -665,20 +692,20 @@ def least_squares_fit_2d(z_data, model, guess_prms=None, bounds=(-np.inf, np.inf
     Parameters:
         z_data: np.ndarray
             2d Array of values to fit.
-        model: function(xx_yy:Tuple[np.ndarray, np.ndarray], ...)
+        model: function(xx_yy:tuple[np.ndarray, np.ndarray], ...)
             Fit function.
-            The first parameter must be Tuple[np.ndarray, np.ndarray]
+            The first parameter must be tuple[np.ndarray, np.ndarray]
             The rest of the parameters must not be tuples.
-        guess_prms: Tuple[...]
+        guess_prms: tuple[...]
             guess parameters.
-        bounds: Tuple[List[...],List[...]]
+        bounds: tuple[list[...],list[...]]
             guess parameters. a tuple of two lists one upper and the other lower bounds.
-        xy_coords: Tuple[np.ndarray, np.ndarray]
+        xy_coords: tuple[np.ndarray, np.ndarray]
             xy coordinates of the data set.
         mask: np.ndarray
             mask of value to fit to.
 
-    Returns: Tuple[Tuple[...], np.ndarray]
+    Returns: tuple[tuple[...], np.ndarray]
         fit parameters
         goodness of fit
     """
@@ -762,7 +789,7 @@ def v_sort(xy: np.ndarray, ascend: bool = True) -> np.ndarray:
         return np.flip(np.argsort((xy[:, 1])))
 
 
-def xy_sort(xy: np.ndarray, shape: Tuple[int, int], h_ascend: bool = True, v_ascend: bool = True) -> np.ndarray:
+def xy_sort(xy: np.ndarray, shape: tuple[int, int], h_ascend: bool = True, v_ascend: bool = True) -> np.ndarray:
     """
     Sort x,y coordinate array based on x and y value.
 
@@ -772,7 +799,7 @@ def xy_sort(xy: np.ndarray, shape: Tuple[int, int], h_ascend: bool = True, v_asc
     Parameters:
         xy: np.ndarray
             Numpy array with (n,2) elements.
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             The arrangement of coordinates.
         h_ascend: bool
             Sorting order.
@@ -790,7 +817,7 @@ def xy_sort(xy: np.ndarray, shape: Tuple[int, int], h_ascend: bool = True, v_asc
     return np.array(indices).flatten()
 
 
-def dotf_registration_mask(shape: Tuple[int, int], size: float = 0.5, center: Tuple[float, float] = (0.5, 0.5)):
+def dotf_registration_mask(shape: tuple[int, int], size: float = 0.5, center: tuple[float, float] = (0.5, 0.5)):
     """
     DOTF Registration pattern mask.
 
@@ -798,11 +825,11 @@ def dotf_registration_mask(shape: Tuple[int, int], size: float = 0.5, center: Tu
         mask = dotf_registration_mask(TODO: example)
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Image shape.
         size: float
             Size of the mask (normalized).
-        center: Tuple[float, float]
+        center: tuple[float, float]
             Center of the mask (normalized).
 
     Returns: np.ndarray
@@ -815,7 +842,7 @@ def dotf_registration_mask(shape: Tuple[int, int], size: float = 0.5, center: Tu
     return box(shape, _size_px, center_px)
 
 
-def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: Tuple[int, int]):
+def detect_registration_pattern(image: np.ndarray, mask: np.ndarray, num_peaks: tuple[int, int]):
     """
     Detect registration patterns.
 
@@ -877,16 +904,16 @@ def smoothstep(edge0, edge1, x):
     return t * t * (3.0 - 2.0 * t)
 
 
-def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.complex64]], locations: List[NDArray[np.float64]]):
+def compound_dotf_to_wavefront(shape: tuple[int, int], dotfs: list[NDArray[np.complex64]], locations: list[NDArray[np.float64]]):
     """
     Convert 4 dotf maps to commands and combine them to one command
 
     Parameters:
-        shape: Tuple[int, int]
+        shape: tuple[int, int]
             Shape of command.
-        dotfs: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+        dotfs: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
             The DOTF images.
-        locations: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+        locations: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
             Actuator positions in each DOTF image.
 
     Returns: nd.ndarray
@@ -919,12 +946,14 @@ def compound_dotf_to_wavefront(shape: Tuple[int, int], dotfs: List[NDArray[np.co
 
     return np.ma.copy(compound_wavefront)
 
+def timestamp_string(timestamp: float = datetime.datetime.now().timestamp(), frmt="%H:%M:%S", ms: None | int = 3, separator=".") -> str:
+    stamp_seconds = datetime.datetime.fromtimestamp(timestamp).strftime(frmt)
+    if ms is None:
+        return stamp_seconds
+    else:
+        return f"{stamp_seconds}{separator}{int((timestamp % 1) * (10**ms)):03d}"
 
-def timestamp_string(timestamp: float = datetime.datetime.now().timestamp(), frmt="%H:%M:%S", ms: int = 3, separator=".") -> str:
-    return datetime.datetime.fromtimestamp(timestamp).strftime(frmt) + f"{separator}{int((timestamp % 1) * (10**ms)):03d}"
-
-
-def overlay_info_string(timestamp: float = datetime.datetime.now().timestamp(), exp_time_ms: int = 0, gain: float = 0, rate: float = 0, temp: float = 0, br: Tuple[int, int] = (0, 0), tl: Tuple[int, int] = (0, 0), frame: int = 0, event: int = 0):
+def overlay_info_string(timestamp: float = datetime.datetime.now().timestamp(), exp_time_ms: int = 0, gain: float = 0, rate: float = 0, temp: float = 0, br: tuple[int, int] = (0, 0), tl: tuple[int, int] = (0, 0), frame: int = 0, event: int = 0):
     return f"Time     : {timestamp_string(timestamp)}\nExp Time : {exp_time_ms}\nGain     : {gain}\nRate     : {rate}\nTemp     : {temp}\nROI\n br      : [{br[0]},{br[1]}]\n tl      : [{tl[0]},{tl[1]}]\nFrame    : {frame}\nEvent    : {event}\n"
 
 
