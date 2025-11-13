@@ -1,9 +1,8 @@
 import unittest
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
 from pykato.plotfunction import preset
-from pykato.function import checkers, sinusoid, vortex, box, disk, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient
+from pykato.function import checkers, sinusoid, vortex, box, disk, chord, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient, timestamp_string
 import numpy as np
-
 
 class TestFunction(unittest.TestCase):
     # pylint: disable=missing-class-docstring
@@ -28,7 +27,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_generate_coordinates_θθ.png")
 
     def test_gradient(self):
-        data = gradient((100, 100), np.pi/4)
+        data = gradient((100, 100), np.pi / 4)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.checkers()")
 
         figure = preset.Imshow_Preset(data)
@@ -42,7 +41,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_checkers.png")
 
     def test_sinusoid(self):
-        data = sinusoid((200, 200), 10*np.pi, 0, np.pi/4)
+        data = sinusoid((200, 200), 10 * np.pi, 0, np.pi / 4)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.sinusoid()")
 
         figure = preset.Imshow_Preset(data)
@@ -71,6 +70,13 @@ class TestFunction(unittest.TestCase):
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_disk.png")
+
+    def test_chord(self):
+        data = chord((400, 400), 125, -0.2, 3 * np.pi / 2, (-200, -200))
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.chord()")
+
+        figure = preset.Imshow_Preset(data)
+        figure.savefig("tests/output/function_chord.png")
 
     def test_gauss2d(self):
         data = gauss2d((200, 200), offset=0, height=1, width=(10, 10), center=(100, 100), tilt=0)
@@ -198,12 +204,12 @@ class TestFunction(unittest.TestCase):
         error = np.abs(data - fit_data)
         log_error = np.log10(error)
         figure = GridSpec_Layout(1, 1)
-        (imshow_ax,) = figure.get_axes()
-        imshow_ax.plot(x, log_error, "+", markersize=10)
-        imshow_ax.set_ylim(-16, -15)
-        imshow_ax.set_ylabel("error")
-        imshow_ax.set_xlim(0, 10)
-        imshow_ax.set_xlabel("x")
+        (axis,) = figure.get_axes()
+        axis.plot(x, log_error, "+", markersize=10)
+        axis.set_ylim(-16, -15)
+        axis.set_ylabel("error")
+        axis.set_xlim(0, 10)
+        axis.set_xlabel("x")
         figure.savefig("tests/output/test_least_squares_fit_linear.png")
 
     def test_least_squares_fit_quadratic(self):
@@ -227,12 +233,12 @@ class TestFunction(unittest.TestCase):
         error = np.abs(data - fit_data)
         log_error = np.log10(error)
         figure = GridSpec_Layout(1, 1)
-        (imshow_ax,) = figure.get_axes()
-        imshow_ax.plot(x, log_error, "+", markersize=10)
-        imshow_ax.set_ylim(-16, -15)
-        imshow_ax.set_ylabel("error")
-        imshow_ax.set_xlim(0, 10)
-        imshow_ax.set_xlabel("x")
+        (axis,) = figure.get_axes()
+        axis.plot(x, log_error, "+", markersize=10)
+        axis.set_ylim(-16, -15)
+        axis.set_ylabel("error")
+        axis.set_xlim(0, 10)
+        axis.set_xlabel("x")
         figure.savefig("tests/output/test_least_squares_fit_quadratic.png")
 
     def test_least_squares_fit_sinusoid(self):
@@ -256,10 +262,21 @@ class TestFunction(unittest.TestCase):
         error = np.abs(data - fit_data)
         log_error = np.log10(error)
         figure = GridSpec_Layout(1, 1)
-        (imshow_ax,) = figure.get_axes()
-        imshow_ax.plot(x, log_error, "+", markersize=10)
-        imshow_ax.set_ylim(-16, -15)
-        imshow_ax.set_ylabel("error")
-        imshow_ax.set_xlim(0, 10)
-        imshow_ax.set_xlabel("x")
+        (axis,) = figure.get_axes()
+        axis.plot(x, log_error, "+", markersize=10)
+        axis.set_ylim(-16, -15)
+        axis.set_ylabel("error")
+        axis.set_xlim(0, 10)
+        axis.set_xlabel("x")
         figure.savefig("tests/output/least_squares_fit_sinusoid.png")
+
+    def test_rot90(self):
+        data = gradient((100, 100), np.pi / 4)
+        self.assertIsInstance(data, np.ndarray, "Array not returned by function.gradient()")
+
+        for i in range(0, 4):
+            np.testing.assert_array_equal(data, np.rot90(np.rot90(data, i), -i), err_msg=f"Rotation not undone for i={i}")
+            print(i)
+
+    def test_timestamp_string(self):
+        print(timestamp_string(frmt="%Y%m%d.%H%M%S", ms = None))

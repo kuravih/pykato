@@ -22,7 +22,7 @@ class TestGridSpecLayout(unittest.TestCase):
         simple_layout_figure.savefig("tests/output/test_Simple_Layout.png")
 
     def test_Image_Layout(self):
-        image_layout_figure = GridSpec_Layout(1, 1, aspect_ratios=(1,))
+        image_layout_figure = GridSpec_Layout(1, 1, aspect_ratios=(8,))
         self.assertIsInstance(image_layout_figure, Figure, "Figure not created by gridspec_layout.GridSpec_Layout")
 
         (imshow_ax,) = image_layout_figure.get_axes()
@@ -98,10 +98,10 @@ class BaseTestPreset(unittest.TestCase):
         sinusoid_test_image = sinusoid((100, 100), 20, 270, 45)
         gauss_test_image = gauss2d((100, 100), 0, 1, (20, 20), (50, 50))
         vortex_test_image = np.pi * (vortex((100, 100), 2) * 2 - 1)
-        text01_test_image = text((100, 100), "01")
-        text02_test_image = text((100, 100), "02")
-        text03_test_image = text((100, 100), "03")
-        text04_test_image = text((100, 100), "04")
+        text01_test_image = text((100, 100), "01", (50, 50), 100)
+        text02_test_image = text((100, 100), "02", (50, 50), 100)
+        text03_test_image = text((100, 100), "03", (50, 50), 100)
+        text04_test_image = text((100, 100), "04", (50, 50), 100)
         polka_vortex_complex_test_image = polka_test_image * np.exp(1j * vortex_test_image)
         checkers_vortex_complex_test_image = checkers_test_image * np.exp(1j * vortex_test_image)
         sinusoid_vortex_complex_test_image = sinusoid_test_image * np.exp(1j * vortex_test_image)
@@ -189,7 +189,7 @@ class TestPreset(BaseTestPreset):
 
         images = image_grid_preset.get_images()
         for img in images:
-            self.assertIsInstance(img, AxesImage, "Imshow List[AxesImage] not available in Figure created by preset.ImageGrid_Preset")
+            self.assertIsInstance(img, AxesImage, "Imshow list[AxesImage] not available in Figure created by preset.ImageGrid_Preset")
 
         image_grid_preset.savefig("tests/output/test_ImageGrid_Preset.png")
 
@@ -224,7 +224,7 @@ class TestPreset(BaseTestPreset):
 
         images = image_grid_colorbar_preset.get_images()
         for img in images:
-            self.assertIsInstance(img, AxesImage, "Imshow List[AxesImage] not available in Figure created by preset.ImageGrid_Colorbar_Preset")
+            self.assertIsInstance(img, AxesImage, "Imshow list[AxesImage] not available in Figure created by preset.ImageGrid_Colorbar_Preset")
 
         image_grid_colorbar_preset.savefig("tests/output/test_ImageGrid_Colorbar_Preset.png")
 
@@ -260,7 +260,7 @@ class TestPreset(BaseTestPreset):
 
         images = complex_image_grid_two_colorbars_preset.get_images()
         for img in images:
-            self.assertIsInstance(img, AxesImage, "Imshow List[AxesImage] not available in Figure created by preset.ImageGrid_Colorbar_Preset")
+            self.assertIsInstance(img, AxesImage, "Imshow list[AxesImage] not available in Figure created by preset.ImageGrid_Colorbar_Preset")
 
         complex_image_grid_two_colorbars_preset.savefig("tests/output/test_Complex_ImageGrid_TwoColorbars_Preset.png")
 
