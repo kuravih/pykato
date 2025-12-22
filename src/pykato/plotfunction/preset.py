@@ -3,7 +3,7 @@ from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
 from matplotlib.axis import Axis
 from matplotlib.axes import Axes
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, LinearLocator
 from matplotlib.colors import Normalize
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
@@ -75,7 +75,7 @@ def Imshow_Preset(image: NDArray[np.float64], figure: Figure | None = None) -> F
 
 
 def _complex_to_plot_abs_arg(zdata: NDArray[np.complex64]) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-    arg_image = np.angle(zdata) / np.pi
+    arg_image = np.angle(zdata)
     _abs = np.abs(zdata)
     _abs = (_abs - np.nanmin(_abs)) / (np.nanmax(_abs) - np.nanmin(_abs))
     abs_image = np.nan_to_num(_abs, nan=0.0, posinf=1.0, neginf=0.0)
@@ -303,7 +303,7 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Fi
     abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
 
     bg_imshow_image = imshow_ax.imshow(np.full(zimage.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
-    imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
+    imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-np.pi, vmax=np.pi)
     imshow_ax.invert_yaxis()
     imshow_image.original_set_data = imshow_image.set_data
     imshow_image.set_data = None
@@ -311,6 +311,7 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Fi
 
     arg_colorbar_ax = divider.append_axes("right", size="5%", pad=0.1)
     figure.colorbar(imshow_image, cax=arg_colorbar_ax)
+    arg_colorbar_ax.yaxis.set_major_locator(LinearLocator(numticks=9))
     arg_colorbar_ax.yaxis.set_major_formatter(FuncFormatter(_pi_formatter))
     arg_colorbar_ax.set_title("arg", size=10)
 

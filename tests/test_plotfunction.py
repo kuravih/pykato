@@ -1,12 +1,13 @@
 import unittest
 
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
-from pykato.plotfunction.preset import Imshow_Preset, Complex_Imshow_Preset, Imshow_Colorbar_Preset, Complex_Imshow_TwoColorbars_Preset, ImageGrid_Preset, ImageGrid_Colorbar_Preset, Complex_ImageGrid_TwoColorbars_Preset, Imshow_Colorbar_Imshow_Colorbar_Preset, Histogram_Colorbar_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Preset
+from pykato.plotfunction.preset import Imshow_Preset, Complex_Imshow_Preset, Imshow_Colorbar_Preset, Complex_Imshow_TwoColorbars_Preset, ImageGrid_Preset, ImageGrid_Colorbar_Preset, Complex_ImageGrid_TwoColorbars_Preset, Imshow_Colorbar_Imshow_Colorbar_Preset, Histogram_Colorbar_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Preset, _pi_formatter
 from pykato.function import polka, vortex, checkers, sinusoid, gauss2d, text
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage
+from matplotlib.ticker import FuncFormatter, LinearLocator
 
 import numpy as np
 
@@ -16,8 +17,15 @@ class TestGridSpecLayout(unittest.TestCase):
         simple_layout_figure = GridSpec_Layout(1, 1)
         self.assertIsInstance(simple_layout_figure, Figure, "Figure not created by gridspec_layout.GridSpec_Layout")
 
-        (imshow_ax,) = simple_layout_figure.get_axes()
-        self.assertIsInstance(imshow_ax, Axes, "imshow_ax Axis not available in Figure created by gridspec_layout.GridSpec_Layout")
+        (ax,) = simple_layout_figure.get_axes()
+        ax.set_title("Y vs X")
+        ax.set_ylabel("Y Label")
+        ax.set_xlabel("X Label")
+        ax.set_ylim(-np.pi/2, np.pi/2)
+        ax.yaxis.set_major_locator(LinearLocator(numticks=5))
+        ax.yaxis.set_major_formatter(FuncFormatter(_pi_formatter))
+        ax.grid(linestyle='-')
+        self.assertIsInstance(ax, Axes, "ax Axis not available in Figure created by gridspec_layout.GridSpec_Layout")
 
         simple_layout_figure.savefig("tests/output/test_Simple_Layout.png")
 
