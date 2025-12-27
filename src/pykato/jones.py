@@ -41,6 +41,7 @@ def calc_terms(θ: float, φ: float, η: float) -> tuple[complex, complex]:
 
     return np.cos(η / 2) - 1j * np.sin(η / 2) * np.cos(2 * θ), np.sin(η / 2) * np.sin(φ) * np.sin(2 * θ) - 1j * np.sin(η / 2) * np.cos(φ) * np.sin(2 * θ)
 
+
 def retarder(θ: float, η: float, φ: float) -> tuple[tuple[complex, complex], tuple[complex, complex]]:
     """
     Jones matrix for a variable retarder at an arbitrary angle θ from the horizontal.

@@ -21,10 +21,10 @@ class TestGridSpecLayout(unittest.TestCase):
         ax.set_title("Y vs X")
         ax.set_ylabel("Y Label")
         ax.set_xlabel("X Label")
-        ax.set_ylim(-np.pi/2, np.pi/2)
+        ax.set_ylim(-np.pi / 2, np.pi / 2)
         ax.yaxis.set_major_locator(LinearLocator(numticks=5))
         ax.yaxis.set_major_formatter(FuncFormatter(_pi_formatter))
-        ax.grid(linestyle='-')
+        ax.grid(linestyle="-")
         self.assertIsInstance(ax, Axes, "ax Axis not available in Figure created by gridspec_layout.GridSpec_Layout")
 
         simple_layout_figure.savefig("tests/output/test_Simple_Layout.png")

@@ -34,7 +34,6 @@ class TestJones(unittest.TestCase):
                 self.assertAlmostEqual(actual_value, expected_value, places=9)
 
     def test_Phaser_preset(self):
-
         fig, ((ax00, ax01, ax02, ax03), (ax10, ax11, ax12, ax13)) = plt.subplots(2, 4)
 
         style_ax(ax00)

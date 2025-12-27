@@ -4,6 +4,7 @@ from pykato.plotfunction import preset
 from pykato.function import checkers, sinusoid, vortex, box, disk, chord, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient, timestamp_string
 import numpy as np
 
+
 class TestFunction(unittest.TestCase):
     # pylint: disable=missing-class-docstring
 
@@ -279,4 +280,4 @@ class TestFunction(unittest.TestCase):
             print(i)
 
     def test_timestamp_string(self):
-        print(timestamp_string(frmt="%Y%m%d.%H%M%S", ms = None))
+        print(timestamp_string(frmt="%Y%m%d.%H%M%S", ms=None))

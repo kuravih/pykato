@@ -7,17 +7,17 @@ from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from scipy.ndimage import center_of_mass
 
+
 class TestFourd(unittest.TestCase):
     # pylint: disable=missing-class-docstring
 
     def test_Measurement(self):
-        sample = Measurement(os.getcwd()+"/tests/data/lyot_mirror.4D")
+        sample = Measurement(os.getcwd() + "/tests/data/lyot_mirror.4D")
         print(sample.tree())
         self.assertIsInstance(sample, Measurement, "4D file could not be parsed")
 
     def test_Measurement_Preset(self):
-
-        data = Measurement(os.getcwd()+"/tests/data/lyot_mirror.4D")
+        data = Measurement(os.getcwd() + "/tests/data/lyot_mirror.4D")
         masked_surface = data.surface.copy()
         mask_center = center_of_mass(~masked_surface.mask)
         mask = ~disk(masked_surface.shape, 500, (-mask_center[1], -mask_center[0]))
@@ -33,8 +33,7 @@ class TestFourd(unittest.TestCase):
         measurement_preset.savefig("tests/output/preset_test_Measurement_Preset.png")
 
     def test_Measurement_Zernike_Preset(self):
-
-        data = Measurement(os.getcwd()+"/tests/data/lyot_mirror.4D")
+        data = Measurement(os.getcwd() + "/tests/data/lyot_mirror.4D")
         masked_surface = data.surface.copy()
         mask_center = center_of_mass(~masked_surface.mask)
         mask = ~disk(masked_surface.shape, 500, (-mask_center[1], -mask_center[0]))
