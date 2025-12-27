@@ -10,7 +10,7 @@ from skimage.feature import peak_local_max
 from skimage.measure import regionprops, label
 from skimage.restoration import unwrap_phase
 from PIL import Image, ImageDraw, ImageFont
-from .resource import FONT_PROGGY_CLEAN
+from importlib.resources import files
 import datetime
 
 
@@ -499,7 +499,7 @@ def text(shape: tuple[int, int], string: str, position: tuple[float, float] | No
     if font_size is None:
         font_size = min(shape)
 
-    font = ImageFont.truetype(FONT_PROGGY_CLEAN, font_size)
+    font = ImageFont.truetype(files("pykato.resource") / "ProggyClean.ttf", font_size)
 
     if position is None:
         position = (shape[0] / 2, shape[1] / 2)
@@ -946,6 +946,7 @@ def compound_dotf_to_wavefront(shape: tuple[int, int], dotfs: list[NDArray[np.co
 
     return np.ma.copy(compound_wavefront)
 
+
 def timestamp_string(timestamp: float | None = None, frmt="%H:%M:%S", ms: None | int = 3, separator=".") -> str:
     if timestamp is None:
         timestamp = datetime.datetime.now().timestamp()
@@ -954,6 +955,7 @@ def timestamp_string(timestamp: float | None = None, frmt="%H:%M:%S", ms: None |
         return stamp_seconds
     else:
         return f"{stamp_seconds}{separator}{int((timestamp % 1) * (10**ms)):03d}"
+
 
 def overlay_info_string(timestamp: float | None = None, exp_time_ms: int = 0, gain: float = 0, rate: float = 0, temp: float = 0, br: tuple[int, int] = (0, 0), tl: tuple[int, int] = (0, 0), frame: int = 0, event: int = 0):
     return f"Time     : {timestamp_string(timestamp)}\nExp Time : {exp_time_ms}\nGain     : {gain}\nRate     : {rate}\nTemp     : {temp}\nROI\n br      : [{br[0]},{br[1]}]\n tl      : [{tl[0]},{tl[1]}]\nFrame    : {frame}\nEvent    : {event}\n"
