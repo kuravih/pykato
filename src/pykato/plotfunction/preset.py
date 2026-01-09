@@ -243,7 +243,7 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = N
     return figure
 
 
-def _pi_formatter(val: float, pos) -> str:
+def _pi_formatter(val: float) -> str:
     if abs(val) < 1e-10:  # Handle values very close to zero
         return "0"
 

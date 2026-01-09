@@ -14,7 +14,7 @@ from importlib.resources import files
 import datetime
 
 
-def generate_coordinates(shape: tuple[int, int], offset: tuple[float, float] = (0, 0), cartesian: bool = False, polar: bool = False) -> tuple[np.ndarray, ...]:
+def generate_coordinates(shape: tuple[int, int], offset: tuple[float, float] | None = None, cartesian: bool = False, polar: bool = False) -> tuple[np.ndarray, ...]:
     """
     Create coordinate grids.
 
@@ -26,8 +26,10 @@ def generate_coordinates(shape: tuple[int, int], offset: tuple[float, float] = (
     Parameters:
         shape: tuple[int, int]
             Image shape.
-        offset: tuple[float, float] = (0, 0)
+        offset: tuple[float, float] | None = None
             Offset of origin.
+            if None origin will be placed at the gird center.
+            Use (0,0) to place origin at the corner
         cartesian: bool = False
             Return cartesian coordinate grid.
         polar: bool = False
@@ -40,28 +42,27 @@ def generate_coordinates(shape: tuple[int, int], offset: tuple[float, float] = (
         Theta coordinates.
     """
 
-    _width, _height = shape
-    _h_offset, _v_offset = offset
+    width, height = shape
+    if offset is None:
+        offset = (-(width - 1) / 2, -(height - 1) / 2)
+    h_offset, v_offset = offset
+    xs, ys = np.arange(0, width) + h_offset, np.arange(0, height) + v_offset
     if not cartesian and not polar:
-        xs, ys = np.linspace(0, _width, _width, endpoint=False) + _h_offset, np.linspace(0, _height, _height, endpoint=False) + _v_offset
         return xs, ys
     elif cartesian and not polar:
-        xs, ys = np.linspace(0, _width, _width, endpoint=False) + _h_offset, np.linspace(0, _height, _height, endpoint=False) + _v_offset
         xx, yy = np.meshgrid(xs, ys)
         return xx, yy
     elif not cartesian and polar:
-        xs, ys = np.linspace(0, _width, _width, endpoint=False) + _h_offset, np.linspace(0, _height, _height, endpoint=False) + _v_offset
         xx, yy = np.meshgrid(xs, ys)
-        rr, θθ = np.hypot(xx, yy), np.arctan2(xx, yy)
+        rr, θθ = np.hypot(xx, yy), np.arctan2(yy, xx)
         return rr, θθ
     else:
-        xs, ys = np.linspace(0, _width, _width, endpoint=False) + _h_offset, np.linspace(0, _height, _height, endpoint=False) + _v_offset
         xx, yy = np.meshgrid(xs, ys)
-        rr, θθ = np.hypot(xx, yy), np.arctan2(xx, yy)
+        rr, θθ = np.hypot(xx, yy), np.arctan2(yy, xx)
         return xx, yy, rr, θθ
 
 
-def gradient(shape: tuple[int, int], angle: float = 0, normalize: bool = True) -> np.ndarray:
+def gradient(shape: tuple[int, int], angle: float = 0, origin: tuple[float, float] | None = None) -> np.ndarray:
     """
     Create a gradient pattern image bounded within [-1, 1].
 
@@ -73,19 +74,20 @@ def gradient(shape: tuple[int, int], angle: float = 0, normalize: bool = True) -
             Image shape.
         angle: float
             Angle of the gradient in radians
+        origin: tuple[float, float] | None = None
+            origin of gradient.
+            if None origin will be placed at the gird center.
+            Use (0,0) to place origin the corner
 
     Returns: np.ndarray
         Image of the gradient pattern.
     """
-    xx, yy = generate_coordinates(shape, cartesian=True)
+    xx, yy = generate_coordinates(shape, origin, cartesian=True)
     grad = xx * np.cos(angle) + yy * np.sin(angle)
-    if normalize:
-        return (grad - np.nanmin(grad)) / (np.nanmax(grad) - np.nanmin(grad))
-    else:
-        return grad
+    return grad
 
 
-def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, int] = (0, 0)) -> np.ndarray:
+def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, int] | None = None) -> np.ndarray:
     """
     Create a checker pattern image.
 
@@ -97,16 +99,16 @@ def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, i
             Image shape.
         size: tuple[int, int]
             Checker size.
-        offset: tuple[int, int] = (0, 0)
-            Origin offset.
+        offset: tuple[float, float] | None = None
+            Offset of origin.
+            if None origin will be placed at the gird center.
+            Use (0,0) to place origin the corner
 
     Returns: np.ndarray
         Image of the checker pattern.
     """
 
     checker_width, checker_height = size
-    checker_width = 1 if (checker_width == 0) else checker_width
-    checker_height = 1 if (checker_height == 0) else checker_height
     xx, yy = generate_coordinates(shape, offset, True)
     xx_steps = (xx // checker_width) % 2
     yy_steps = (yy // checker_height) % 2
@@ -134,12 +136,12 @@ def sinusoid(shape: tuple[int, int], period: float, phase: float, angle: float) 
         Image of the sinusoidal pattern.
         The mean is 0.0 and the amplitude is 1.0 (i.e min = -1.0, max = +1.0)
     """
-    pp = 2 * np.pi * gradient(shape, angle, False)
+    pp = 2 * np.pi * gradient(shape, angle)
     ff = 1 / period
     return np.sin(ff * pp + phase)
 
 
-def vortex(shape: tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarray:
+def vortex(shape: tuple[int, int], charge: int = 1, angle: float = 0.0, center: tuple[float, float] | None = None) -> np.ndarray:
     """
     Create a Vortex pattern image.
 
@@ -153,21 +155,24 @@ def vortex(shape: tuple[int, int], charge: int, angle: float = 0.0) -> np.ndarra
             Charge of the vortex.
         angle: float
             Angle of the vortex.
+        center: tuple[float, float] | None = None
+            Center of the vortex.
+            if None origin will be placed at the gird center.
+            Use (0,0) to place origin the corner
 
     Returns: np.ndarray
         Image of the vortex pattern.
     """
-    image_width, image_height = shape
-    xx, yy = generate_coordinates(shape, (0.5 - image_width / 2, 0.5 - image_height / 2), True)
+    xx, yy = generate_coordinates(shape, center, cartesian=True)
     # Apply rotation
     cos_a = np.cos(angle)
     sin_a = np.sin(angle)
     xx_rot = cos_a * xx - sin_a * yy
     yy_rot = sin_a * xx + cos_a * yy
-    return (((charge * np.arctan2(yy_rot, xx_rot)) / np.pi) + 1) / 2
+    return charge * np.arctan2(yy_rot, xx_rot)
 
 
-def box(shape: tuple[int, int], size: tuple[int, int], center: tuple[float, float] = (0, 0)) -> np.ndarray:
+def box(shape: tuple[int, int], size: tuple[int, int], center: tuple[float, float] | None = None) -> np.ndarray:
     """
     Create a box pattern image.
 
@@ -179,15 +184,16 @@ def box(shape: tuple[int, int], size: tuple[int, int], center: tuple[float, floa
             Image shape.
         size: tuple[int, int]
             Size of the box.
-        center: tuple[int, int] = (0, 0)
+        center: tuple[float, float] | None = None
             Center of the box.
+            if None center will be placed at the gird center.
+            Use (0,0) to place center at the corner
 
     Returns: np.ndarray
         Image of the box pattern.
     """
     box_width, box_height = size
-    box_x_center, box_y_center = center
-    xx, yy = generate_coordinates(shape, (0.5 + box_x_center, 0.5 + box_y_center), True)
+    xx, yy = generate_coordinates(shape, center, cartesian=True)
     return (-box_width < xx) & (xx < box_width) & (-box_height < yy) & (yy < box_height)
 
 
@@ -280,7 +286,7 @@ def efc_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: fl
         return np.rot90(_efc_probe(shape, dξ, dη, ξc, θ))
 
 
-def disk(shape: tuple[int, int], radius: float, center: tuple[float, float] = (0, 0)) -> np.ndarray:
+def disk(shape: tuple[int, int], radius: float, center: tuple[float, float] | None = None) -> np.ndarray:
     """
     Create a disk pattern image.
 
@@ -292,20 +298,21 @@ def disk(shape: tuple[int, int], radius: float, center: tuple[float, float] = (0
             Image shape.
         radius: float
             Radius of the disk.
-        center: tuple[float, float] = (0, 0)
+        center: tuple[float, float] | None = None
             Center of the disk.
+            if None center will be placed at the gird center.
+            Use (0,0) to place center at the corner
 
     Returns: np.ndarray
         Image of the disk pattern.
     """
-    disk_x_center, disk_y_center = center
-    rr, _ = generate_coordinates(shape, (0.5 + disk_x_center, 0.5 + disk_y_center), polar=True)
-    return rr < radius
+    rr, _ = generate_coordinates(shape, center, polar=True)
+    return rr <= radius
 
 
-def chord(shape: tuple[int, int], radius: float, percent: float, angle: float, center: tuple[float, float] = (0, 0)) -> np.ndarray:
+def chord(shape: tuple[int, int], radius: float, percent: float, angle: float = 0, center: tuple[float, float] | None = None) -> np.ndarray:
     """
-    Create a disk pattern image.
+    Create a chord (disk portion) pattern image.
 
     Example:
         image_chord = chord((200,200), 50, -0.2, 3 * np.pi / 2, (100,100))
@@ -319,16 +326,20 @@ def chord(shape: tuple[int, int], radius: float, percent: float, angle: float, c
             Percentage of radius to cutoff.
         angle: float
             angle to cutoff.
-        center: tuple[float, float] = (0, 0)
+        center: tuple[float, float] | None = None
             Center of the disk.
+            if None center will be placed at the gird center.
+            Use (0,0) to place center at the corner
 
     Returns: np.ndarray
         Image of the chord pattern.
     """
-    disk_x_center, disk_y_center = center
-    xx, yy, rr, θθ = generate_coordinates(shape, (0.5 + disk_x_center, 0.5 + disk_y_center), cartesian=True, polar=True)
-    grad = xx * np.cos(angle) + yy * np.sin(angle)
-    return (rr < radius) & (grad < radius * 2 * percent)
+    disk_image = disk(shape, radius, center)
+    grad_image = gradient(shape, angle, center)
+    temp_image = disk_image * grad_image
+    temp_min, temp_ptp = np.min(temp_image), np.ptp(temp_image)
+    cutoff = temp_min + temp_ptp * percent
+    return (grad_image >= cutoff) * disk_image
 
 
 def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float], offset: float, height: float, width: tuple[float, float], tilt: float = 0):
@@ -341,8 +352,10 @@ def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float]
     Parameters:
         xx_yy: tuple[np.ndarray, np.ndarray]
             X Y coordinate arrays.
-        center: tuple[float, float]
-            Gaussian center coordinates.
+        center: tuple[float, float] | None = None
+            Center of the disk.
+            if None center will be placed at the gird center.
+            Use (0,0) to place center at the corner
         offset: float
             Offset.
         height: float
@@ -388,11 +401,11 @@ def gauss2d(shape: tuple[int, int], offset: float = 0, height: float = 1, width:
     Returns: np.ndarray
         image of the gaussian.
     """
-    xx, yy = generate_coordinates(shape, cartesian=True)
+    xx, yy = generate_coordinates(shape, (0, 0), cartesian=True)
     return gauss2d_fn((xx, yy), center, offset, height, width, tilt)
 
 
-def polka(shape: tuple[int, int], radius: float, spacing: tuple[float, float], offset: tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
+def polka(shape: tuple[int, int], radius: float, spacing: tuple[float, float], offset: tuple[float, float] = (0, 0)) -> np.ndarray:
     """
     Create a polka dot pattern of 2d gaussian spots.
 
@@ -406,27 +419,25 @@ def polka(shape: tuple[int, int], radius: float, spacing: tuple[float, float], o
             Radius of a dot.
         spacing: tuple[float, float]
             Spacing between dots
-        offset: tuple[int, int] = (0, 0)
-            Origin offset.
+        offset: tuple[float, float] | None = None
+            Offset of origin.
+            if None origin will be placed at the gird center.
+            Use (0,0) to place origin the corner
 
     Returns: np.ndarray
         image of the dot pattern.
     """
     width, height = shape
     dot_h_spacing, dot_v_spacing = spacing
-    dot_h_offset, dot_v_offset = offset
-    xs, ys = np.arange(0, width + dot_h_spacing, dot_h_spacing) + 0.5 * dot_h_offset, np.arange(0, height + dot_v_spacing, dot_v_spacing) + 0.5 * dot_v_offset
+    h_offset, v_offset = offset[0] % dot_h_spacing, offset[0] % dot_v_spacing
+    xs, ys = np.arange(-dot_h_spacing, width + dot_h_spacing, dot_h_spacing) + h_offset, np.arange(-dot_v_spacing, height + dot_v_spacing, dot_v_spacing) + v_offset
 
     spots = []
     for x in xs:
         for y in ys:
-            spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
+            spots.append(disk(shape, radius, center=(-x, -y)))
 
-    image = np.sum(spots, axis=0)
-    if normalize:
-        return image / np.max(image)
-    else:
-        return image
+    return np.sum(spots, axis=0)
 
 
 def register(shape: tuple[int, int], count: tuple[int, int], radius: float, spacing: tuple[float, float], center: tuple[float, float] = (0, 0), normalize=True) -> np.ndarray:
@@ -526,7 +537,7 @@ def preroll(shape: tuple[int, int], count: int, percent: float = 0, font_size: i
     Returns: np.ndarray
         Image of pre-roll screen.
     """
-    return (text(shape, f"{count:02d}", position=(0.5 * shape[0], 0.57 * shape[1]), font_size=font_size) + vortex(shape, 1, percent * 2 * np.pi)) / 2
+    return (text(shape, f"{count:02d}", position=(0.5 * shape[0], 0.57 * shape[1]), font_size=font_size) + vortex(shape, 0.25, percent * np.pi)) / 2
 
 
 def airy_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float], radius: float, height: float):
@@ -576,7 +587,7 @@ def airy(shape: tuple[int, int], center: tuple[float, float] = (0, 0), radius: f
     Returns: np.ndarray
         Image of the Airy disk.
     """
-    xx, yy = generate_coordinates(shape, cartesian=True)
+    xx, yy = generate_coordinates(shape, (0,0), cartesian=True)
     return airy_fn((xx, yy), center, radius, height)
 
 
@@ -625,7 +636,7 @@ def linear2d(shape: tuple[int, int], a: float, b: float, c: float):
     Returns: np.ndarray
         Image of the plane.
     """
-    xx, yy = generate_coordinates(shape, cartesian=True)
+    xx, yy = generate_coordinates(shape, (0,0), cartesian=True)
     return linear2d_fn((xx, yy), a, b, c)
 
 

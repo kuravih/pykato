@@ -2,14 +2,17 @@ import unittest
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
 from pykato.plotfunction import preset
 from pykato.function import checkers, sinusoid, vortex, box, disk, chord, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient, timestamp_string
+from pykato.log import setup_logger
 import numpy as np
+
+logger = setup_logger("TestFunction", terminator="\n")
 
 
 class TestFunction(unittest.TestCase):
     # pylint: disable=missing-class-docstring
 
     def test_generate_coordinates(self):
-        xx, yy, rr, θθ = generate_coordinates((100, 100), cartesian=True, polar=True)
+        xx, yy, rr, θθ = generate_coordinates((6, 6), cartesian=True, polar=True)
         self.assertIsInstance(xx, np.ndarray, "Array not returned by function.checkers()")
         self.assertIsInstance(yy, np.ndarray, "Array not returned by function.checkers()")
         self.assertIsInstance(rr, np.ndarray, "Array not returned by function.checkers()")
@@ -35,45 +38,51 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_gradient.png")
 
     def test_checkers(self):
-        data = checkers((100, 100), (25, 25), (-12.5, 12.5))
+        data = checkers((10, 10), (2, 2), (0, 0))
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.checkers()")
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_checkers.png")
 
     def test_sinusoid(self):
-        data = sinusoid((200, 200), 10 * np.pi, 0, np.pi / 4)
+        data = sinusoid((81, 81), 10 * np.pi, 0, np.pi / 4)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.sinusoid()")
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_sinusoid.png")
 
     def test_vortex(self):
-        arg = (2 * vortex((200, 200), 3) - 1) * np.pi
-        self.assertIsInstance(arg, np.ndarray, "Array not returned by function.vortex()")
+        size = 81
+        radius = 3
+        vortex_test_image = vortex((size, size), 2, np.pi / 4)
+        logger.info(vortex_test_image.shape)
+        self.assertIsInstance(vortex_test_image, np.ndarray, "Array not returned by function.vortex()")
 
-        polka_test_image = polka((100, 100), 4, (20, 20), (-20, -20))
-        vortex_test_image = np.pi * (vortex((100, 100), 2) * 2 - 1)
+        polka_test_image = polka((size, size), radius, (10, 10))
         polka_vortex_complex_test_image = polka_test_image * np.exp(1j * vortex_test_image)
         figure = preset.Complex_Imshow_Preset(polka_vortex_complex_test_image)
         figure.savefig("tests/output/function_vortex.png")
 
     def test_box(self):
-        data = box((200, 200), (40, 50), (-100, -100))
+        data = box((10, 10), (2, 2))
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.box()")
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_box.png")
 
     def test_disk(self):
-        data = disk((200, 200), 50, (-100, -100))
+        width, height = 21, 21
+        radius = 1
+        data = disk((width, height), radius)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.disk()")
 
         figure = preset.Imshow_Preset(data)
         figure.savefig("tests/output/function_disk.png")
 
     def test_chord(self):
-        data = chord((400, 400), 125, -0.2, 3 * np.pi / 2, (-200, -200))
+        width, height = 100, 100
+        radius = 25
+        data = chord((width, height), radius, 0.7)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.chord()")
 
         figure = preset.Imshow_Preset(data)
@@ -94,7 +103,8 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_airy.png")
 
     def test_polka(self):
-        data = polka((200, 200), 10, (40, 40), (-40, -40))
+        data = polka((100, 100), 4, (20, 20), (-4, -4))
+
         print(f"data min {np.min(data)}")
         print(f"data max {np.max(data)}")
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.polka()")
@@ -122,7 +132,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_text.png")
 
     def test_preroll(self):
-        data = preroll((200, 200), 1, 0.125, 100)
+        data = preroll((200, 200), 88, 0.125, 100)
         print(f"data min {np.min(data)}")
         print(f"data max {np.max(data)}")
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.character()")
@@ -157,6 +167,12 @@ class TestFunction(unittest.TestCase):
             self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="width estimation not accurate")
 
         fit_gauss2d_data = gauss2d((200, 200), offset=fit_offset, height=fit_height, width=fit_width, center=fit_center, tilt=0)
+
+        figure = preset.Imshow_Colorbar_Preset(gauss2d_data)
+        figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d_data.png")
+
+        figure = preset.Imshow_Colorbar_Preset(fit_gauss2d_data)
+        figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d_fit.png")
 
         delta = gauss2d_data - fit_gauss2d_data
         log_delta = np.log10(np.abs(delta))
