@@ -115,7 +115,7 @@ def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, i
     return np.logical_xor(xx_steps, yy_steps)
 
 
-def sinusoid(shape: tuple[int, int], period: float, phase: float, angle: float) -> np.ndarray:
+def sinusoid(shape: tuple[int, int], period: float, phase: float = 0, angle: float = 0) -> np.ndarray:
     """
     Create a sinusoidal pattern image.
 

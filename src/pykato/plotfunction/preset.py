@@ -122,6 +122,7 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Figure | None =
 
     # approach 1: using a black/white background image without alpha + an hsv data image with alpha
     _bg_imshow_image = imshow_ax.imshow(np.full(zimage.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
+    # imshow_ax.set_facecolor("black") # or white
     imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
     imshow_ax.invert_yaxis()
     imshow_image.original_set_data = imshow_image.set_data
@@ -243,7 +244,7 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = N
     return figure
 
 
-def _pi_formatter(val: float) -> str:
+def _pi_formatter(val: float, pos) -> str:
     if abs(val) < 1e-10:  # Handle values very close to zero
         return "0"
 
@@ -660,6 +661,7 @@ def Complex_ImageGrid_TwoColorbars_Preset(zimage: list[NDArray[np.complex64]], f
             imshow_axes.append(imshow_ax)
 
         _bg_imshow_image = imshow_ax.imshow(np.full(azdata.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
+        # imshow_ax.set_facecolor("black") # or white
         imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
         imshow_image.original_set_data = imshow_image.set_data
         imshow_image.set_data = None

@@ -29,8 +29,8 @@ class Measurement(h5.File):
         sample.calculated_zernike_terms : for calculated zernike terms
     """
 
-    def __init__(self, _path):
-        super(Measurement, self).__init__(_path, "r")
+    def __init__(self, filepath):
+        super(Measurement, self).__init__(filepath, "r")
 
     def tree(self) -> str:
         def _tree(item, pre: str = "") -> str:

@@ -80,9 +80,9 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_disk.png")
 
     def test_chord(self):
-        width, height = 100, 100
-        radius = 25
-        data = chord((width, height), radius, 0.7)
+        width, height = 256, 256
+        radius = 256 * 7/16
+        data = chord((width, height), radius, 0.65)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.chord()")
 
         figure = preset.Imshow_Preset(data)
@@ -280,8 +280,9 @@ class TestFunction(unittest.TestCase):
         log_error = np.log10(error)
         figure = GridSpec_Layout(1, 1)
         (axis,) = figure.get_axes()
-        axis.plot(x, log_error, "+", markersize=10)
-        axis.set_ylim(-16, -15)
+        axis.plot(x, data, "or", markersize=10)
+        axis.plot(x, fit_data, "+b-", markersize=10)
+        # axis.set_ylim(-16, -15)
         axis.set_ylabel("error")
         axis.set_xlim(0, 10)
         axis.set_xlabel("x")

@@ -1,15 +1,13 @@
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+from matplotlib.gridspec import GridSpec
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 
-
-def _gridSpec_layout(gridspecs) -> tuple[Figure, tuple[Axes, ...]]:
-    figure = plt.figure()
+def _gridspec_layout(gs : GridSpec) -> tuple[Axes, ...]:
     axs = ()
-    for spec in gridspecs:
+    for spec in gs:
         axs = axs + (plt.subplot(spec),)
-    return figure, axs
+    return axs
 
 
 def GridSpec_Layout(*args, aspect_ratios: tuple[float, ...] | None = None, **kwargs) -> Figure:
@@ -35,17 +33,29 @@ def GridSpec_Layout(*args, aspect_ratios: tuple[float, ...] | None = None, **kwa
         Figure object.
     """
 
-    figure, axes = _gridSpec_layout(gridspec.GridSpec(*args, **kwargs))
+    if "figure" not in kwargs:
+        kwargs["figure"] = plt.figure()
 
+    gs = GridSpec(*args, **kwargs)
+    
+    axes = _gridspec_layout(gs)
+    
     if aspect_ratios is not None:
         for axis, aspect_ratio in zip(axes, aspect_ratios):
             axis.set_aspect(1.0 / aspect_ratio)
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _close():
-        plt.close(figure)
+    def _get_gridspec() -> GridSpec:
+        return gs
 
-    figure.close = _close
+    kwargs["figure"].get_gridspec = _get_gridspec
     # -----------------------------------------------------------------------------------------------------------------
 
-    return figure
+    # -----------------------------------------------------------------------------------------------------------------
+    def _close():
+        plt.close(kwargs["figure"])
+
+    kwargs["figure"].close = _close
+    # -----------------------------------------------------------------------------------------------------------------
+
+    return kwargs["figure"]
