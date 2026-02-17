@@ -10,7 +10,7 @@ def _gridspec_layout(gs : GridSpec) -> tuple[Axes, ...]:
     return axs
 
 
-def GridSpec_Layout(*args, aspect_ratios: tuple[float, ...] | None = None, **kwargs) -> Figure:
+def GridSpec_Layout(*args, aspect_ratios: tuple[float, ...] | None = None, init:bool = True, **kwargs) -> Figure:
     """
     Layout a figure with multiple axes with specified aspect ratios.
 
@@ -33,16 +33,17 @@ def GridSpec_Layout(*args, aspect_ratios: tuple[float, ...] | None = None, **kwa
         Figure object.
     """
 
-    if "figure" not in kwargs:
+    if ("figure" not in kwargs) or (kwargs["figure"] is None):
         kwargs["figure"] = plt.figure()
 
     gs = GridSpec(*args, **kwargs)
     
-    axes = _gridspec_layout(gs)
-    
-    if aspect_ratios is not None:
-        for axis, aspect_ratio in zip(axes, aspect_ratios):
-            axis.set_aspect(1.0 / aspect_ratio)
+    if init:
+        axes = _gridspec_layout(gs)
+        
+        if aspect_ratios is not None:
+            for axis, aspect_ratio in zip(axes, aspect_ratios):
+                axis.set_aspect(1.0 / aspect_ratio)
 
     # -----------------------------------------------------------------------------------------------------------------
     def _get_gridspec() -> GridSpec:

@@ -1,3 +1,4 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage
@@ -46,9 +47,30 @@ def Imshow_Preset(image: NDArray[np.float64], figure: Figure | None = None) -> F
     if figure is None:
         figure = plt.figure()
 
-    imshow_ax = figure.gca()
-    imshow_image = imshow_ax.imshow(image)
-    imshow_ax.invert_yaxis()
+    imshow_axes = figure.gca()
+
+    imshow_image = imshow_axes.imshow(image)
+    imshow_axes.invert_yaxis()
+
+    # -----------------------------------------------------------------------------------------------------------------
+    imshow_image._cmap_name: str = "viridis"
+
+    def _get_cmap_name() -> str:
+        return imshow_image._cmap_name
+
+    imshow_image.get_cmap_name = _get_cmap_name
+
+    def _set_cmap_name(value: str, bad: str | None = "black", over: str | None = None):
+        imshow_image._cmap_name = value
+        _cmap = mpl.colormaps[imshow_image._cmap_name].copy()
+        if bad is not None:
+            _cmap.set_bad(color=bad)
+        if over is not None:
+            _cmap.set_over(over)
+        imshow_image.set_cmap(_cmap)
+
+    imshow_image.set_cmap_name = _set_cmap_name
+    # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
     def _get_imshow_ax() -> Axes:
@@ -121,7 +143,7 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Figure | None =
     abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
 
     # approach 1: using a black/white background image without alpha + an hsv data image with alpha
-    _bg_imshow_image = imshow_ax.imshow(np.full(zimage.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
+    _bg_imshow_image = imshow_ax.imshow(np.zeros_like(zimage, dtype=float), "gray", vmin=0, vmax=1)
     # imshow_ax.set_facecolor("black") # or white
     imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-1, vmax=1)
     imshow_ax.invert_yaxis()
@@ -185,14 +207,20 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = N
             Figure object with the imshow axis.
 
     Functions:
+        get_cmap_name(): str
+            Get colormap name.
+
+        set_cmap_name(value: str, bad: str | None = 'black', over: str | None = None):
+            Set colormap by name.
+
         get_image(): AxesImage
             Get imshow image.
 
-        get_imshow_ax(): Axes
-            Get imshow axis.
+        get_imshow_axes(): Axes
+            Get imshow axes.
 
-        get_cbar_ax(): Axes
-            Get colorbar axis.
+        get_cbar_axes(): Axes
+            Get colorbar axes.
 
         close():
             Properly close the figure.
@@ -201,17 +229,36 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = N
     if figure is None:
         figure = plt.figure()
 
-    cmap = plt.cm.viridis.copy()
-    cmap.set_bad(color="black")
-    # cmap.set_over("red")  # Set color for values exceeding the colormap range
+    imshow_axes = figure.gca()
 
-    imshow_ax = figure.gca()
-    imshow_image = imshow_ax.imshow(image, cmap=cmap)
-    imshow_ax.invert_yaxis()
-    divider = make_axes_locatable(imshow_ax)
-    colorbar_ax = divider.append_axes("right", size="5%", pad=0.1)
-    figure.colorbar(imshow_image, cax=colorbar_ax)
-    figure.set_clim = imshow_image.set_clim
+    imshow_image = imshow_axes.imshow(image)
+    imshow_axes.invert_yaxis()
+
+    divider = make_axes_locatable(imshow_axes)
+
+    colorbar_axes = divider.append_axes("right", size="5%", pad=0.1)
+
+    figure.colorbar(imshow_image, cax=colorbar_axes)
+
+    # -----------------------------------------------------------------------------------------------------------------
+    imshow_image._cmap_name: str = "viridis"
+
+    def _get_cmap_name() -> str:
+        return imshow_image._cmap_name
+
+    imshow_image.get_cmap_name = _get_cmap_name
+
+    def _set_cmap_name(value: str, bad: str | None = "black", over: str | None = None):
+        imshow_image._cmap_name = value
+        _cmap = mpl.colormaps[imshow_image._cmap_name].copy()
+        if bad is not None:
+            _cmap.set_bad(color=bad)
+        if over is not None:
+            _cmap.set_over(over)
+        imshow_image.set_cmap(_cmap)
+
+    imshow_image.set_cmap_name = _set_cmap_name
+    # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
     def _get_image() -> AxesImage:
@@ -221,17 +268,17 @@ def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = N
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_ax() -> Axes:
-        return imshow_ax
+    def _get_imshow_axes() -> Axes:
+        return imshow_axes
 
-    figure.get_imshow_ax = _get_imshow_ax
+    figure.get_imshow_axes = _get_imshow_axes
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_cbar_ax() -> Axes:
-        return colorbar_ax
+    def _get_cbar_axes() -> Axes:
+        return colorbar_axes
 
-    figure.get_cbar_ax = _get_cbar_ax
+    figure.get_cbar_axes = _get_cbar_axes
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -303,7 +350,7 @@ def Complex_Imshow_TwoColorbars_Preset(zimage: NDArray[np.complex64], figure: Fi
 
     abs_image, arg_image = _complex_to_plot_abs_arg(zimage)
 
-    bg_imshow_image = imshow_ax.imshow(np.full(zimage.shape, 0, dtype=float), "gray", vmin=0, vmax=1)
+    bg_imshow_image = imshow_ax.imshow(np.zeros_like(zimage, dtype=float), "gray", vmin=0, vmax=1)
     imshow_image = imshow_ax.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-np.pi, vmax=np.pi)
     imshow_ax.invert_yaxis()
     imshow_image.original_set_data = imshow_image.set_data
@@ -779,7 +826,7 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: tuple[NDArray[np.float64], ND
             Figure object with the imshow axis.
 
     Functions:
-        get_images(): list[AxesImage]
+        get_images(): tuple[AxesImage, AxesImage]:
             Get imshow image.
 
         get_images()[index].set_data(image:NDArray[np.float64])
@@ -792,54 +839,94 @@ def Imshow_Colorbar_Imshow_Colorbar_Preset(images: tuple[NDArray[np.float64], ND
             Properly close the figure.
     """
 
+    image_a, image_b = images
+
     if figure is None:
         figure = plt.figure()
 
-    cmap = plt.cm.viridis.copy()
-    cmap.set_bad(color="black")
-    cmap.set_over("red")
+    imshow_axes_a = figure.gca()
 
-    image_a, image_b = images
+    imshow_image_a = imshow_axes_a.imshow(image_a)
+    imshow_axes_a.invert_yaxis()
 
-    imshow_ax_a = figure.gca()
-    imshow_image_a = imshow_ax_a.imshow(image_a, cmap=cmap)
-    imshow_ax_a.invert_yaxis()
+    divider = make_axes_locatable(imshow_axes_a)
 
-    divider = make_axes_locatable(imshow_ax_a)
+    cbar_axes_a = divider.append_axes("right", size="5%", pad=0.1)
 
-    colorbar_ax_a = divider.append_axes("right", size="5%", pad=0.1)
-    figure.colorbar(imshow_image_a, cax=colorbar_ax_a)
+    figure.colorbar(imshow_image_a, cax=cbar_axes_a)
 
-    imshow_ax_b = divider.append_axes("right", size="100%", pad=1.0)
-    imshow_image_b = imshow_ax_b.imshow(image_b, cmap=cmap)
-    imshow_ax_b.invert_yaxis()
+    imshow_axes_b = divider.append_axes("right", size="100%", pad=1.0)
 
-    colorbar_ax_b = divider.append_axes("right", size="5%", pad=0.1)
-    figure.colorbar(imshow_image_b, cax=colorbar_ax_b)
+    imshow_image_b = imshow_axes_b.imshow(image_b)
+    imshow_axes_b.invert_yaxis()
 
-    imshow_axes = [imshow_ax_a, imshow_ax_b]
-    imshow_images = [imshow_image_a, imshow_image_b]
-    colorbar_axes = [colorbar_ax_a, colorbar_ax_b]
+    cbar_axes_b = divider.append_axes("right", size="5%", pad=0.1)
+
+    figure.colorbar(imshow_image_b, cax=cbar_axes_b)
+
+    imshow_image_tuple = (imshow_image_a, imshow_image_b)
+    imshow_axes_tuple = (imshow_axes_a, imshow_axes_b)
+    cbar_axes_tuple = (cbar_axes_a, cbar_axes_b)
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_images() -> list[AxesImage]:
-        return imshow_images
+    def _get_image_tuple() -> tuple[AxesImage, AxesImage]:
+        return imshow_image_tuple
 
-    figure.get_images = _get_images
+    figure.get_image_tuple = _get_image_tuple
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_imshow_axes() -> list[Axis]:
-        return imshow_axes
+    def _get_imshow_axes_tuple() -> tuple[Axes, Axes]:
+        return imshow_axes_tuple
 
-    figure.get_imshow_axes = _get_imshow_axes
+    figure.get_imshow_axes_tuple = _get_imshow_axes_tuple
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_cbar_axes() -> Axes:
-        return colorbar_axes
+    def _get_cbar_axes_tuple() -> tuple[Axes, Axes]:
+        return cbar_axes_tuple
 
-    figure.get_cbar_axes = _get_cbar_axes
+    figure.get_cbar_axes_tuple = _get_cbar_axes_tuple
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    imshow_image_a._cmap_name: str = "viridis"
+
+    def _a_get_cmap_name() -> str:
+        return imshow_image_a._cmap_name
+
+    imshow_image_a.get_cmap_name = _a_get_cmap_name
+
+    def _a_set_cmap_name(value: str, bad: str | None = "black", over: str | None = None):
+        imshow_image_a._cmap_name = value
+        _cmap = mpl.colormaps[imshow_image_a._cmap_name].copy()
+        if bad is not None:
+            _cmap.set_bad(color=bad)
+        if over is not None:
+            _cmap.set_over(over)
+        imshow_image_a.set_cmap(_cmap)
+
+    imshow_image_a.set_cmap_name = _a_set_cmap_name
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    imshow_image_b._cmap_name: str = "viridis"
+
+    def _b_get_cmap_name() -> str:
+        return imshow_image_b._cmap_name
+
+    imshow_image_b.get_cmap_name = _b_get_cmap_name
+
+    def _b_set_cmap_name(value: str, bad: str | None = "black", over: str | None = None):
+        imshow_image_b._cmap_name = value
+        _cmap = mpl.colormaps[imshow_image_b._cmap_name].copy()
+        if bad is not None:
+            _cmap.set_bad(color=bad)
+        if over is not None:
+            _cmap.set_over(over)
+        imshow_image_b.set_cmap(_cmap)
+
+    imshow_image_b.set_cmap_name = _b_set_cmap_name
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
