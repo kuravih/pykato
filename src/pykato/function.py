@@ -87,7 +87,7 @@ def gradient(shape: tuple[int, int], angle: float = 0, origin: tuple[float, floa
     return grad
 
 
-def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, int] | None = None) -> np.ndarray:
+def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, int] | None = None, color1: float = 1.0, color2: float = 0.0) -> np.ndarray:
     """
     Create a checker pattern image.
 
@@ -242,7 +242,7 @@ def dotf_probe(shape: tuple[int, int], size: tuple[int, int], direction: DOTFPro
     return box(shape, _size, _center)
 
 
-class EFCProbeDirection(Enum):
+class PairwiseProbeDirection(Enum):
     HORIZONTAL = auto()
     VERTICAL = auto()
 
@@ -250,40 +250,40 @@ class EFCProbeDirection(Enum):
         return self.name.lower()
 
 
-def efc_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float, direction: EFCProbeDirection) -> np.ndarray:
+def pairwise_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float, direction: PairwiseProbeDirection) -> np.ndarray:
     """
     Create a EFC probe pattern image.
 
     Example:
-        image_efc_probe = efc_probe((200,200), 0.01, 0.01, 90, 0, EFCProbeDirection.HORIZONTAL)
+        image_pairwise_probe = pairwise_probe((200,200), 0.01, 0.01, 90, 0, PairwiseProbeDirection.HORIZONTAL)
 
     Parameters:
         shape: tuple[int, int]
             Image shape.
         dξ: float
-            Probe rectangle size in (along the EFCProbeDirection).
+            Probe rectangle size in (along the PairwiseProbeDirection).
         dη: float
-            Probe rectangle size in (perpendicular to the EFCProbeDirection).
+            Probe rectangle size in (perpendicular to the PairwiseProbeDirection).
         ξc: float
-            Period of the sinusoid (along the EFCProbeDirection).
+            Period of the sinusoid (along the PairwiseProbeDirection).
         θ: float
-            Phase of the sinusoid (along the EFCProbeDirection) in radians.
+            Phase of the sinusoid (along the PairwiseProbeDirection) in radians.
 
     Returns: np.ndarray
         Image of the EFC probe pattern.
     """
 
-    def _efc_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
+    def _pairwise_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
         xx, yy = generate_coordinates(shape, cartesian=True, offset=(-shape[0] / 2 + 0.5, -shape[1] / 2 + 0.5))
         _2pi_xx = 2 * np.pi * xx
         _2pi_yy = 2 * np.pi * yy
         _invξc_2pi_xx = (1 / ξc) * _2pi_xx
         return (np.sinc(dξ * _2pi_xx) * np.sinc(dη * _2pi_yy) * np.sin(_invξc_2pi_xx + θ) + 1) / 2
 
-    if direction == EFCProbeDirection.HORIZONTAL:
-        return _efc_probe(shape, dξ, dη, ξc, θ)
+    if direction == PairwiseProbeDirection.HORIZONTAL:
+        return _pairwise_probe(shape, dξ, dη, ξc, θ)
     else:
-        return np.rot90(_efc_probe(shape, dξ, dη, ξc, θ))
+        return np.rot90(_pairwise_probe(shape, dξ, dη, ξc, θ))
 
 
 def disk(shape: tuple[int, int], radius: float, center: tuple[float, float] | None = None) -> np.ndarray:
@@ -429,7 +429,7 @@ def polka(shape: tuple[int, int], radius: float, spacing: tuple[float, float], o
     """
     width, height = shape
     dot_h_spacing, dot_v_spacing = spacing
-    h_offset, v_offset = offset[0] % dot_h_spacing, offset[0] % dot_v_spacing
+    h_offset, v_offset = offset[0] % dot_h_spacing, offset[1] % dot_v_spacing
     xs, ys = np.arange(-dot_h_spacing, width + dot_h_spacing, dot_h_spacing) + h_offset, np.arange(-dot_v_spacing, height + dot_v_spacing, dot_v_spacing) + v_offset
 
     spots = []
@@ -504,7 +504,7 @@ def text(shape: tuple[int, int], string: str, position: tuple[float, float] | No
         Image of the character string.
     """
 
-    img = Image.new("L", shape, color=255)  # Create a blank white image
+    img = Image.new("L", shape, color=0)  # Create a blank image for mask
     draw = ImageDraw.Draw(img)
 
     if font_size is None:
@@ -515,9 +515,9 @@ def text(shape: tuple[int, int], string: str, position: tuple[float, float] | No
     if position is None:
         position = (shape[0] / 2, shape[1] / 2)
 
-    draw.text(position, string, align="center", font=font, fill=0, anchor="mm")  # Draw string
+    draw.text(position, string, align="center", font=font, fill=255, anchor="mm")  # Draw string
 
-    return np.array(img) / 255.0  # Convert to numpy array
+    return np.array(img) / 255.0
 
 
 def preroll(shape: tuple[int, int], count: int, percent: float = 0, font_size: int | None = None) -> np.ndarray:
@@ -587,7 +587,7 @@ def airy(shape: tuple[int, int], center: tuple[float, float] = (0, 0), radius: f
     Returns: np.ndarray
         Image of the Airy disk.
     """
-    xx, yy = generate_coordinates(shape, (0,0), cartesian=True)
+    xx, yy = generate_coordinates(shape, (0, 0), cartesian=True)
     return airy_fn((xx, yy), center, radius, height)
 
 
@@ -636,11 +636,11 @@ def linear2d(shape: tuple[int, int], a: float, b: float, c: float):
     Returns: np.ndarray
         Image of the plane.
     """
-    xx, yy = generate_coordinates(shape, (0,0), cartesian=True)
+    xx, yy = generate_coordinates(shape, (0, 0), cartesian=True)
     return linear2d_fn((xx, yy), a, b, c)
 
 
-def least_squares_fit(y_data, model, guess_prms=None, bounds=(-np.inf, np.inf), x_coord=None, mask=None):
+def least_squares_fit(y_data: np.ndarray, model, guess_prms=None, bounds=(-np.inf, np.inf), x_coord: np.ndarray | None = None, mask: np.ndarray | None = None):
     """
     Fit a function to an array of values.
 
@@ -739,7 +739,7 @@ def least_squares_fit_2d(z_data, model, guess_prms=None, bounds=(-np.inf, np.inf
     return curve_fit(model, xy_fit, z_fit, p0=guess_prms, bounds=bounds)
 
 
-def psf_to_otf(psf: np.ndarray, axes=None) -> np.ndarray:
+def psf_to_otf(psf: np.ndarray, axes=None) -> NDArray[np.complex64]:
     """
     Calculate the Optical Transfer Function (OTF) from a PSF.
 
@@ -985,3 +985,7 @@ def RadialAverage(image, center=(0, 0)):
     avg = ndimage.mean(image, rr, index=r)
 
     return r, avg
+
+
+def describe_array(arr: np.ndarray, vals: bool = False) -> str:
+    return f"Shape: {arr.shape}\ndtype: {arr.dtype}\nMin:   {arr.min()}\nMax:   {arr.max()}" + (f"\n{arr}\n" if vals else "\n")
