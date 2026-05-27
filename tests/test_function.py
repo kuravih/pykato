@@ -178,7 +178,7 @@ class TestFunction(unittest.TestCase):
         log_delta = np.log10(np.abs(delta))
         figure = preset.Imshow_Colorbar_Preset(log_delta)
         figure.get_image().set_clim(-16, 0)
-        figure.get_cbar_ax().set_ylabel("Error")
+        figure.get_cbar_axes().set_ylabel("Error")
         figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d.png")
 
     def test_least_squares_fit_2d_linear2d(self):
@@ -197,7 +197,7 @@ class TestFunction(unittest.TestCase):
         log_delta = np.log10(np.abs(delta))
         figure = preset.Imshow_Colorbar_Preset(log_delta)
         figure.get_image().set_clim(-16, 0)
-        figure.get_cbar_ax().set_ylabel("Error")
+        figure.get_cbar_axes().set_ylabel("Error")
         figure.savefig("tests/output/delta_least_squares_fit_2d_linear2d.png")
 
     def test_least_squares_fit_linear(self):

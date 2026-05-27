@@ -1,13 +1,14 @@
 import unittest
 
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
-from pykato.plotfunction.preset import Imshow_Preset, Complex_Imshow_Preset, Imshow_Colorbar_Preset, Complex_Imshow_TwoColorbars_Preset, ImageGrid_Preset, ImageGrid_Colorbar_Preset, Complex_ImageGrid_TwoColorbars_Preset, Imshow_Colorbar_Imshow_Colorbar_Preset, Histogram_Colorbar_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Preset, _pi_formatter
+from pykato.plotfunction.preset import Imshow_Preset, Complex_Imshow_Preset, Imshow_Colorbar_Preset, Complex_Imshow_TwoColorbars_Preset, ImageGrid_Preset, ImageGrid_Colorbar_Preset, Complex_ImageGrid_TwoColorbars_Preset, Imshow_Colorbar_Imshow_Colorbar_Preset, Histogram_Colorbar_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Preset, _pi_formatter, monkeypatch_AxesImage_alpha_mask_show
 from pykato.function import polka, vortex, checkers, sinusoid, gauss2d, text
 
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 from matplotlib.image import AxesImage
 from matplotlib.ticker import FuncFormatter, LinearLocator
+from matplotlib.colors import Normalize
 
 import numpy as np
 
@@ -128,7 +129,7 @@ class TestPreset(BaseTestPreset):
         imshow_preset.get_image().set_clim(0, 1)
 
         self.assertIsInstance(imshow_preset, Figure, "Figure not created by preset.Imshow_Preset")
-        self.assertIsInstance(imshow_preset.get_imshow_ax(), Axes, "Imshow Axes not available in Figure created by preset.Imshow_Preset")
+        self.assertIsInstance(imshow_preset.get_imshow_axes(), Axes, "Imshow Axes not available in Figure created by preset.Imshow_Preset")
         self.assertIsInstance(imshow_preset.get_image(), AxesImage, "Imshow AxesImage not available in Figure created by preset.Imshow_Preset")
 
         imshow_preset.savefig("tests/output/test_Imshow_Preset.png")
@@ -137,15 +138,15 @@ class TestPreset(BaseTestPreset):
         complex_imshow_preset = Complex_Imshow_Preset(self.data["polka_vortex_complex_test_image"])
 
         self.assertIsInstance(complex_imshow_preset, Figure, "Figure not created by preset.Complex_Imshow_Preset")
-        self.assertIsInstance(complex_imshow_preset.get_imshow_ax(), Axes, "Imshow axes not available in Figure created by preset.Complex_Imshow_Preset")
+        self.assertIsInstance(complex_imshow_preset.get_imshow_axes(), Axes, "Imshow axes not available in Figure created by preset.Complex_Imshow_Preset")
         self.assertIsInstance(complex_imshow_preset.get_image(), AxesImage, "Imshow image not available in Figure created by preset.Complex_Imshow_Preset")
 
         complex_imshow_preset.savefig("tests/output/test_Imshow_Preset.png")
 
         complex_imshow_preset.get_image().set_data(self.data["checkers_vortex_complex_test_image"])
         complex_imshow_preset.savefig("tests/output/test_Imshow_Preset_set_data.png")
-        complex_imshow_preset.get_imshow_ax().set_xlim((25, 75))
-        complex_imshow_preset.get_imshow_ax().set_ylim((25, 75))
+        complex_imshow_preset.get_imshow_axes().set_xlim((25, 75))
+        complex_imshow_preset.get_imshow_axes().set_ylim((25, 75))
         complex_imshow_preset.savefig("tests/output/test_Imshow_Preset_set_xlim_set_ylim.png")
 
     def test_Imshow_Colorbar_Preset(self):
@@ -159,12 +160,12 @@ class TestPreset(BaseTestPreset):
         self.assertIsInstance(colorbar_ax, Axes, "Colorbar Axes not available in Figure created by preset.Imshow_Colorbar_Preset")
 
         self.assertIsInstance(imshow_colorbar_preset.get_image(), AxesImage, "Image AxesImage not available in Figure created by preset.Imshow_Colorbar_Preset")
-        self.assertIsInstance(imshow_colorbar_preset.get_imshow_ax(), Axes, "Imshow Axes not available in Figure created by preset.Imshow_Colorbar_Preset")
-        self.assertIsInstance(imshow_colorbar_preset.get_cbar_ax(), Axes, "Colorbar Axes not available in Figure created by preset.Imshow_Colorbar_Preset")
+        self.assertIsInstance(imshow_colorbar_preset.get_imshow_axes(), Axes, "Imshow Axes not available in Figure created by preset.Imshow_Colorbar_Preset")
+        self.assertIsInstance(imshow_colorbar_preset.get_cbar_axes(), Axes, "Colorbar Axes not available in Figure created by preset.Imshow_Colorbar_Preset")
         imshow_colorbar_preset.savefig("tests/output/test_Imshow_Colorbar_Preset.png")
 
-        imshow_colorbar_preset.get_imshow_ax().set_xlim((25, 75))
-        imshow_colorbar_preset.get_imshow_ax().set_ylim((25, 75))
+        imshow_colorbar_preset.get_imshow_axes().set_xlim((25, 75))
+        imshow_colorbar_preset.get_imshow_axes().set_ylim((25, 75))
         imshow_colorbar_preset.savefig("tests/output/test_Imshow_Colorbar_Preset_set_xlim_set_ylim.png")
 
     def test_Complex_Imshow_TwoColorbars_Preset(self):
@@ -176,12 +177,12 @@ class TestPreset(BaseTestPreset):
         self.assertIsInstance(imshow_ax, Axes, "Imshow Axes not available in Figure created by preset.Complex_Imshow_TwoColorbars_Preset")
         self.assertIsInstance(mod_colorbar_ax, Axes, "Colorbar Axes not available in Figure created by preset.Complex_Imshow_TwoColorbars_Preset")
         self.assertIsInstance(arg_colorbar_ax, Axes, "Colorbar Axes not available in Figure created by preset.Complex_Imshow_TwoColorbars_Preset")
-        self.assertIsInstance(complex_imshow_two_colorbars_preset.get_imshow_ax(), Axes, "Imshow Axes not available in Figure created by preset.Complex_Imshow_TwoColorbars_Preset")
+        self.assertIsInstance(complex_imshow_two_colorbars_preset.get_imshow_axes(), Axes, "Imshow Axes not available in Figure created by preset.Complex_Imshow_TwoColorbars_Preset")
 
         complex_imshow_two_colorbars_preset.get_image().set_data(self.data["checkers_vortex_complex_test_image"])
         complex_imshow_two_colorbars_preset.savefig("tests/output/test_Complex_Imshow_TwoColorbars_Preset_set_data.png")
-        complex_imshow_two_colorbars_preset.get_imshow_ax().set_xlim((25, 75))
-        complex_imshow_two_colorbars_preset.get_imshow_ax().set_ylim((25, 75))
+        complex_imshow_two_colorbars_preset.get_imshow_axes().set_xlim((25, 75))
+        complex_imshow_two_colorbars_preset.get_imshow_axes().set_ylim((25, 75))
         complex_imshow_two_colorbars_preset.savefig("tests/output/test_Complex_Imshow_TwoColorbars_Preset_set_xlim_set_ylim.png")
 
     def test_ImageGrid_Preset(self):
@@ -195,16 +196,16 @@ class TestPreset(BaseTestPreset):
         self.assertIsInstance(imshow3_ax, Axes, "Imshow Axes not available in Figure created by preset.ImageGrid_Preset")
         self.assertIsInstance(imshow4_ax, Axes, "Imshow Axes not available in Figure created by preset.ImageGrid_Preset")
 
-        images = image_grid_preset.get_images()
+        images = image_grid_preset.get_image_list()
         for img in images:
             self.assertIsInstance(img, AxesImage, "Imshow list[AxesImage] not available in Figure created by preset.ImageGrid_Preset")
 
         image_grid_preset.savefig("tests/output/test_ImageGrid_Preset.png")
 
-        image_grid_preset.get_images()[0].set_data(self.data["text01_test_image"])
-        image_grid_preset.get_images()[1].set_data(self.data["text02_test_image"])
-        image_grid_preset.get_images()[2].set_data(self.data["text03_test_image"])
-        image_grid_preset.get_images()[3].set_data(self.data["text04_test_image"])
+        image_grid_preset.get_image_list()[0].set_data(self.data["text01_test_image"])
+        image_grid_preset.get_image_list()[1].set_data(self.data["text02_test_image"])
+        image_grid_preset.get_image_list()[2].set_data(self.data["text03_test_image"])
+        image_grid_preset.get_image_list()[3].set_data(self.data["text04_test_image"])
 
         image_grid_preset.savefig("tests/output/test_ImageGrid_Preset_set_data.png")
 
@@ -214,7 +215,10 @@ class TestPreset(BaseTestPreset):
         y3 = 25 * np.cos(4 * self.data["ω_data"] + np.pi / 2) + 50
         y4 = 25 * np.cos(5 * self.data["ω_data"]) + 50
 
-        image_grid_preset.plot([[x0, y1], [x0, y2], [x0, y3], [x0, y4]])
+        image_grid_preset.get_imshow_axes_list()[0].plot(x0, y1)
+        image_grid_preset.get_imshow_axes_list()[1].plot(x0, y2)
+        image_grid_preset.get_imshow_axes_list()[2].plot(x0, y3)
+        image_grid_preset.get_imshow_axes_list()[3].plot(x0, y4)
 
         image_grid_preset.savefig("tests/output/test_ImageGrid_Preset_plot.png")
 
@@ -230,16 +234,16 @@ class TestPreset(BaseTestPreset):
         self.assertIsInstance(imshow4_ax, Axes, "Imshow Axes not available in Figure created by preset.ImageGrid_Colorbar_Preset")
         self.assertIsInstance(colorbar_ax, Axes, "Imshow Axes not available in Figure created by preset.ImageGrid_Colorbar_Preset")
 
-        images = image_grid_colorbar_preset.get_images()
+        images = image_grid_colorbar_preset.get_image_list()
         for img in images:
             self.assertIsInstance(img, AxesImage, "Imshow list[AxesImage] not available in Figure created by preset.ImageGrid_Colorbar_Preset")
 
         image_grid_colorbar_preset.savefig("tests/output/test_ImageGrid_Colorbar_Preset.png")
 
-        image_grid_colorbar_preset.get_images()[0].set_data(self.data["text01_test_image"])
-        image_grid_colorbar_preset.get_images()[1].set_data(self.data["text02_test_image"])
-        image_grid_colorbar_preset.get_images()[2].set_data(self.data["text03_test_image"])
-        image_grid_colorbar_preset.get_images()[3].set_data(self.data["text04_test_image"])
+        image_grid_colorbar_preset.get_image_list()[0].set_data(self.data["text01_test_image"])
+        image_grid_colorbar_preset.get_image_list()[1].set_data(self.data["text02_test_image"])
+        image_grid_colorbar_preset.get_image_list()[2].set_data(self.data["text03_test_image"])
+        image_grid_colorbar_preset.get_image_list()[3].set_data(self.data["text04_test_image"])
 
         image_grid_colorbar_preset.savefig("tests/output/test_ImageGrid_Colorbar_Preset_set_data.png")
 
@@ -249,12 +253,15 @@ class TestPreset(BaseTestPreset):
         y3 = 25 * np.cos(4 * self.data["ω_data"] + np.pi / 2) + 50
         y4 = 25 * np.cos(5 * self.data["ω_data"]) + 50
 
-        image_grid_colorbar_preset.plot([[x0, y1], [x0, y2], [x0, y3], [x0, y4]])
+        image_grid_colorbar_preset.get_imshow_axes_list()[0].plot(x0, y1)
+        image_grid_colorbar_preset.get_imshow_axes_list()[1].plot(x0, y2)
+        image_grid_colorbar_preset.get_imshow_axes_list()[2].plot(x0, y3)
+        image_grid_colorbar_preset.get_imshow_axes_list()[3].plot(x0, y4)
 
         image_grid_colorbar_preset.savefig("tests/output/test_ImageGrid_Colorbar_Preset_plot.png")
 
     def test_Complex_ImageGrid_TwoColorbars_Preset(self):
-        complex_image_grid_two_colorbars_preset = Complex_ImageGrid_TwoColorbars_Preset(tuple(self.data[key] for key in ("polka_vortex_complex_test_image", "checkers_vortex_complex_test_image", "sinusoid_vortex_complex_test_image", "gauss_vortex_complex_test_image")))
+        complex_image_grid_two_colorbars_preset = Complex_ImageGrid_TwoColorbars_Preset(list(self.data[key] for key in ("polka_vortex_complex_test_image", "checkers_vortex_complex_test_image", "sinusoid_vortex_complex_test_image", "gauss_vortex_complex_test_image")))
 
         self.assertIsInstance(complex_image_grid_two_colorbars_preset, Figure, "Figure not created by preset.Complex_ImageGrid_TwoColorbars_Preset")
 
@@ -266,16 +273,16 @@ class TestPreset(BaseTestPreset):
         self.assertIsInstance(colorbar1_ax, Axes, "Imshow axis not available in Figure created by preset.Complex_ImageGrid_TwoColorbars_Preset")
         self.assertIsInstance(colorbar2_ax, Axes, "Imshow axis not available in Figure created by preset.Complex_ImageGrid_TwoColorbars_Preset")
 
-        images = complex_image_grid_two_colorbars_preset.get_images()
+        images = complex_image_grid_two_colorbars_preset.get_image_list()
         for img in images:
             self.assertIsInstance(img, AxesImage, "Imshow list[AxesImage] not available in Figure created by preset.ImageGrid_Colorbar_Preset")
 
         complex_image_grid_two_colorbars_preset.savefig("tests/output/test_Complex_ImageGrid_TwoColorbars_Preset.png")
 
-        complex_image_grid_two_colorbars_preset.get_images()[0].set_data(self.data["text01_vortex_complex_test_image"])
-        complex_image_grid_two_colorbars_preset.get_images()[1].set_data(self.data["text02_vortex_complex_test_image"])
-        complex_image_grid_two_colorbars_preset.get_images()[2].set_data(self.data["text03_vortex_complex_test_image"])
-        complex_image_grid_two_colorbars_preset.get_images()[3].set_data(self.data["text04_vortex_complex_test_image"])
+        complex_image_grid_two_colorbars_preset.get_image_list()[0].set_data(self.data["text01_vortex_complex_test_image"])
+        complex_image_grid_two_colorbars_preset.get_image_list()[1].set_data(self.data["text02_vortex_complex_test_image"])
+        complex_image_grid_two_colorbars_preset.get_image_list()[2].set_data(self.data["text03_vortex_complex_test_image"])
+        complex_image_grid_two_colorbars_preset.get_image_list()[3].set_data(self.data["text04_vortex_complex_test_image"])
 
         complex_image_grid_two_colorbars_preset.savefig("tests/output/test_Complex_ImageGrid_TwoColorbars_Preset_set_data.png")
 
@@ -285,7 +292,10 @@ class TestPreset(BaseTestPreset):
         y3 = 25 * np.cos(4 * self.data["ω_data"] + np.pi / 2) + 50
         y4 = 25 * np.cos(5 * self.data["ω_data"]) + 50
 
-        complex_image_grid_two_colorbars_preset.plot([[x0, y1], [x0, y2], [x0, y3], [x0, y4]])
+        complex_image_grid_two_colorbars_preset.get_imshow_axes_list()[0].plot(x0, y1)
+        complex_image_grid_two_colorbars_preset.get_imshow_axes_list()[1].plot(x0, y2)
+        complex_image_grid_two_colorbars_preset.get_imshow_axes_list()[2].plot(x0, y3)
+        complex_image_grid_two_colorbars_preset.get_imshow_axes_list()[3].plot(x0, y4)
 
         complex_image_grid_two_colorbars_preset.savefig("tests/output/test_Complex_ImageGrid_TwoColorbars_Preset_plot.png")
 
@@ -303,9 +313,9 @@ class TestPreset(BaseTestPreset):
         imshow_colorbar_imshow_colorbar_preset.savefig("tests/output/preset_Imshow_Colorbar_Imshow_Colorbar_Preset.png")
 
     def test_Histogram_Colorbar_Preset(self):
-        histogram_colorbar_preset = Histogram_Colorbar_Preset(self.data["polka_test_image"] * (2**16 - 1), vmax=2.0**16 - 1, nbins=64, position="bottom")
+        histogram_colorbar_preset = Histogram_Colorbar_Preset(self.data["polka_test_image"] * (2**16 - 1), nbins=64, position="bottom")
         histogram_colorbar_preset.set_data(self.data["polka_test_image"])
-        histogram_colorbar_preset.set_vlim(0, 1)
+        histogram_colorbar_preset.set_cmap_norm(Normalize(0, 1))
 
         self.assertIsInstance(histogram_colorbar_preset, Figure, "Figure not created by preset.Histogram_Colorbar_Preset")
 
@@ -343,3 +353,13 @@ class TestPreset(BaseTestPreset):
         self.assertIsInstance(plot_ax, Axes, "Plot axis not available in Figure created by preset.test_Imshow_Colorbar_Plot_Preset")
 
         imshow_colorbar_imshow_colorbar_plot_preset.savefig("tests/output/preset_test_Imshow_Colorbar_Plot_Preset.png")
+
+    def test_monkeypatch_Imshow_Preset(self):
+        imshow_preset = Imshow_Preset(self.data["sinusoid_test_image"])
+        monkeypatch_AxesImage_alpha_mask_show(imshow_preset.get_image(), self.data["gauss_test_image"], "black")
+        imshow_preset.get_image().set_alpha_mask_show(True)
+
+        self.assertIsInstance(imshow_preset, Figure, "Figure not created by preset.Imshow_Preset")
+        self.assertIsInstance(imshow_preset.get_imshow_axes(), Axes, "Imshow Axes not available in Figure created by preset.Imshow_Preset")
+        self.assertIsInstance(imshow_preset.get_image(), AxesImage, "Imshow AxesImage not available in Figure created by preset.Imshow_Preset")
+        imshow_preset.savefig("tests/output/test_monkeypatch_Imshow_Preset.png")
