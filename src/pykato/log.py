@@ -3,6 +3,8 @@ import logging
 
 def setup_logger(name, terminator="\r"):
     logger = logging.getLogger(name)
+    if logger.handlers:
+        return logger
     logger.setLevel(logging.INFO)
     logger.propagate = False
     handler = logging.StreamHandler()
