@@ -1,5 +1,3 @@
-from enum import Enum, IntEnum, auto
-
 import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
@@ -67,7 +65,7 @@ def gradient(shape: tuple[int, int], angle: float = 0, origin: tuple[float, floa
     Create a gradient pattern image bounded within [-1, 1].
 
     Example:
-        image_checkers = gradient((200,200), 45)
+        image_gradient = gradient((200,200), 45)
 
     Parameters:
         shape: tuple[int, int]
@@ -115,7 +113,7 @@ def checkers(shape: tuple[int, int], size: tuple[int, int], offset: tuple[int, i
     return np.logical_xor(xx_steps, yy_steps)
 
 
-def sinusoid(shape: tuple[int, int], period: float, phase: float = 0, angle: float = 0) -> np.ndarray:
+def sinusoid(shape: tuple[int, int], period: float, angle: float = 0, phase: float = 0) -> np.ndarray:
     """
     Create a sinusoidal pattern image.
 
@@ -127,10 +125,10 @@ def sinusoid(shape: tuple[int, int], period: float, phase: float = 0, angle: flo
             Image shape.
         period: float
             Period of the sinusoid in pixels.
-        phase: float
-            Phase of the sinusoid in radians.
         angle: float
             Angle of the sinusoid in radians.
+        phase: float
+            Phase of the sinusoid in radians.
 
     Returns: np.ndarray
         Image of the sinusoidal pattern.
@@ -195,95 +193,6 @@ def box(shape: tuple[int, int], size: tuple[int, int], center: tuple[float, floa
     box_width, box_height = size
     xx, yy = generate_coordinates(shape, center, cartesian=True)
     return (-box_width < xx) & (xx < box_width) & (-box_height < yy) & (yy < box_height)
-
-
-class DOTFProbeDirection(IntEnum):
-    RIGHT = 3
-    BOTTOM = 6
-    LEFT = 9
-    TOP = 12
-
-    def to_str(self) -> str:
-        return f"{self.value:02d}"
-
-
-def dotf_probe(shape: tuple[int, int], size: tuple[int, int], direction: DOTFProbeDirection) -> np.ndarray:
-    """
-    Create a DOTF probe pattern image.
-
-    Example:
-        image_dotf_probe = dotf_probe((200,200), (4,11), DOTFProbeDirection.TOP)
-
-    Parameters:
-        shape: tuple[int, int]
-            Image shape.
-        size: tuple[int, int]
-            Size of the box.
-        direction: DOTFProbeDirection
-            direction of the probe.
-
-    Returns: np.ndarray
-        Image of the dotf probe pattern.
-    """
-    width, height = shape
-    a, b = size
-    if direction == DOTFProbeDirection.RIGHT:
-        _center = (-width, -height // 2)
-        _size = a, b
-    elif direction == DOTFProbeDirection.BOTTOM:
-        _center = (-width // 2, 0)
-        _size = b, a
-    elif direction == DOTFProbeDirection.LEFT:
-        _center = (0, -height // 2)
-        _size = a, b
-    else:  # DOTFProbeDirection.TOP
-        _center = (-width // 2, -height)
-        _size = b, a
-    return box(shape, _size, _center)
-
-
-class PairwiseProbeDirection(Enum):
-    HORIZONTAL = auto()
-    VERTICAL = auto()
-
-    def to_str(self) -> str:
-        return self.name.lower()
-
-
-def pairwise_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float, direction: PairwiseProbeDirection) -> np.ndarray:
-    """
-    Create a EFC probe pattern image.
-
-    Example:
-        image_pairwise_probe = pairwise_probe((200,200), 0.01, 0.01, 90, 0, PairwiseProbeDirection.HORIZONTAL)
-
-    Parameters:
-        shape: tuple[int, int]
-            Image shape.
-        dξ: float
-            Probe rectangle size in (along the PairwiseProbeDirection).
-        dη: float
-            Probe rectangle size in (perpendicular to the PairwiseProbeDirection).
-        ξc: float
-            Period of the sinusoid (along the PairwiseProbeDirection).
-        θ: float
-            Phase of the sinusoid (along the PairwiseProbeDirection) in radians.
-
-    Returns: np.ndarray
-        Image of the EFC probe pattern.
-    """
-
-    def _pairwise_probe(shape: tuple[int, int], dξ: float, dη: float, ξc: float, θ: float) -> np.ndarray:
-        xx, yy = generate_coordinates(shape, cartesian=True, offset=(-shape[0] / 2 + 0.5, -shape[1] / 2 + 0.5))
-        _2pi_xx = 2 * np.pi * xx
-        _2pi_yy = 2 * np.pi * yy
-        _invξc_2pi_xx = (1 / ξc) * _2pi_xx
-        return (np.sinc(dξ * _2pi_xx) * np.sinc(dη * _2pi_yy) * np.sin(_invξc_2pi_xx + θ) + 1) / 2
-
-    if direction == PairwiseProbeDirection.HORIZONTAL:
-        return _pairwise_probe(shape, dξ, dη, ξc, θ)
-    else:
-        return np.rot90(_pairwise_probe(shape, dξ, dη, ξc, θ))
 
 
 def disk(shape: tuple[int, int], radius: float, center: tuple[float, float] | None = None) -> np.ndarray:
@@ -988,4 +897,11 @@ def RadialAverage(image, center=(0, 0)):
 
 
 def describe_array(arr: np.ndarray, vals: bool = False) -> str:
-    return f"Shape: {arr.shape}\ndtype: {arr.dtype}\nMin:   {arr.min()}\nMax:   {arr.max()}" + (f"\n{arr}\n" if vals else "\n")
+    return f"Shape: {arr.shape}\ndtype: {arr.dtype}\nMin:   {np.nanmin(arr)}\nMax:   {np.nanmax(arr)}" + (f"\n{arr}\n" if vals else "\n")
+
+
+def invert_2x2_arrays(a: float | np.ndarray, b: float | np.ndarray, c: float | np.ndarray, d: float | np.ndarray) -> tuple[float | np.ndarray, float | np.ndarray, float | np.ndarray, float | np.ndarray]:
+    Δ = a * d - b * c
+    p, q = d / Δ, -b / Δ
+    r, s = -c / Δ, a / Δ
+    return p, q, r, s
