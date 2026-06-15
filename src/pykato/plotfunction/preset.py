@@ -10,15 +10,14 @@ from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from fractions import Fraction
-from matplotlib.typing import ColorType
 
 import numpy as np
 from numpy.typing import NDArray
 
 from pykato.log import setup_logger
 
-
 logger = setup_logger("preset", terminator="\n")
+
 
 def monkeypatch_Axes_mask_image(axes: Axes, mask: NDArray[np.float64]):
     """
@@ -30,28 +29,6 @@ def monkeypatch_Axes_mask_image(axes: Axes, mask: NDArray[np.float64]):
         return axes._mask_image
 
     axes.get_mask = _get_mask
-
-
-def monkeypatch_AxesImage_alpha_mask_show(axesImage: AxesImage, alpha_mask: NDArray[np.float64], color: ColorType):
-    """
-    monkey patch set_alpha_mask_show(value: bool), get_alpha_mask_show():bool to an AxesImage
-    """
-    axesImage._alpha_mask_show: bool = False
-
-    def _get_alpha_mask_show() -> bool:
-        return axesImage._alpha_mask_show
-
-    axesImage.get_alpha_mask_show = _get_alpha_mask_show
-
-    def _set_alpha_mask_show(value: bool):
-        axesImage._alpha_mask_show = value
-        if axesImage._alpha_mask_show & (alpha_mask is not None):
-            axesImage.set_alpha(alpha_mask)
-            axesImage.axes.set_facecolor(color)
-        else:
-            axesImage.set_alpha(None)
-
-    axesImage.set_alpha_mask_show = _set_alpha_mask_show
 
 
 def monkeypatch_AxesImage_cmap_name(axesImage: AxesImage):
@@ -162,7 +139,7 @@ def _complex_to_plot_abs_arg(zdata: NDArray[np.complex64], abs_min: float | None
         abs_min = np.nanmin(_abs)
     if abs_max is None:
         abs_max = np.nanmax(_abs)
-    _abs =  (_abs - abs_min) / (abs_max - abs_min)
+    _abs = (_abs - abs_min) / (abs_max - abs_min)
     _abs = np.nan_to_num(_abs, nan=0.0, posinf=1.0, neginf=0.0)
     abs_image = np.clip(_abs, 0.0, 1.0)
     return abs_image, arg_image
@@ -208,7 +185,7 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Figure | None =
 
     # approach 1: using a black/white background image without alpha + an hsv data image with alpha
     # _bg_imshow_image = imshow_axes.imshow(np.zeros_like(zimage, dtype=float), "gray", vmin=0, vmax=1)
-    imshow_axes.set_facecolor("black") # or white
+    imshow_axes.set_facecolor("black")  # or white
     imshow_image = imshow_axes.imshow(arg_image, alpha=abs_image, cmap="hsv", vmin=-np.pi, vmax=np.pi)
     imshow_axes.invert_yaxis()
     imshow_image.original_set_data = imshow_image.set_data

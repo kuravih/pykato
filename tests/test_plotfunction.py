@@ -1,7 +1,7 @@
 import unittest
 
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
-from pykato.plotfunction.preset import Imshow_Preset, Complex_Imshow_Preset, Imshow_Colorbar_Preset, Complex_Imshow_TwoColorbars_Preset, ImageGrid_Preset, ImageGrid_Colorbar_Preset, Complex_ImageGrid_TwoColorbars_Preset, Imshow_Colorbar_Imshow_Colorbar_Preset, Histogram_Colorbar_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Preset, _pi_formatter, monkeypatch_AxesImage_alpha_mask_show
+from pykato.plotfunction.preset import Imshow_Preset, Complex_Imshow_Preset, Imshow_Colorbar_Preset, Complex_Imshow_TwoColorbars_Preset, ImageGrid_Preset, ImageGrid_Colorbar_Preset, Complex_ImageGrid_TwoColorbars_Preset, Imshow_Colorbar_Imshow_Colorbar_Preset, Histogram_Colorbar_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Plot_Preset, Imshow_Colorbar_Imshow_Colorbar_Plot_Preset, _pi_formatter, monkeypatch_Axes_mask_image
 from pykato.function import polka, vortex, checkers, sinusoid, gauss2d, text
 
 from matplotlib.figure import Figure
@@ -356,10 +356,16 @@ class TestPreset(BaseTestPreset):
 
     def test_monkeypatch_Imshow_Preset(self):
         imshow_preset = Imshow_Preset(self.data["sinusoid_test_image"])
-        monkeypatch_AxesImage_alpha_mask_show(imshow_preset.get_image(), self.data["gauss_test_image"], "black")
-        imshow_preset.get_image().set_alpha_mask_show(True)
+        imshow_preset.get_image().set_alpha(self.data["gauss_test_image"])
+        imshow_preset.get_image().axes.set_facecolor('black')
+
+        monkeypatch_Axes_mask_image(imshow_preset.get_imshow_axes(), np.zeros_like(self.data["sinusoid_test_image"]).astype(np.float64))
+        imshow_preset.get_imshow_axes().get_mask().set_cmap("Greys_r")  # 0 → black
+        imshow_preset.get_imshow_axes().get_mask().set_alpha(0.5*(1.0 - self.data["polka_test_image"]))
 
         self.assertIsInstance(imshow_preset, Figure, "Figure not created by preset.Imshow_Preset")
         self.assertIsInstance(imshow_preset.get_imshow_axes(), Axes, "Imshow Axes not available in Figure created by preset.Imshow_Preset")
         self.assertIsInstance(imshow_preset.get_image(), AxesImage, "Imshow AxesImage not available in Figure created by preset.Imshow_Preset")
         imshow_preset.savefig("tests/output/test_monkeypatch_Imshow_Preset.png")
+
+
