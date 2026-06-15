@@ -251,7 +251,7 @@ def chord(shape: tuple[int, int], radius: float, percent: float, angle: float = 
     return (grad_image >= cutoff) * disk_image
 
 
-def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float], offset: float, height: float, width: tuple[float, float], tilt: float = 0):
+def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float], offset: float, height: float, size: tuple[float, float], tilt: float = 0):
     """
     2d gaussian function (used for fitting).
 
@@ -269,8 +269,8 @@ def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float]
             Offset.
         height: float
             Height of the gaussian peak.
-        width: tuple[float, float]
-            2D width of the gaussian.
+        size: tuple[float, float]
+            2D size of the gaussian.
         tilt: float
             Tilt angle in radians.
 
@@ -279,14 +279,14 @@ def gauss2d_fn(xx_yy: tuple[np.ndarray, np.ndarray], center: tuple[float, float]
     """
     xx, yy = xx_yy
     x0, y0 = center
-    u, v = width
+    u, v = size
     _a = (np.cos(tilt) ** 2) / (2 * u**2) + (np.sin(tilt) ** 2) / (2 * v**2)
     _b = -(np.sin(2 * tilt)) / (4 * u**2) + (np.sin(2 * tilt)) / (4 * v**2)
     _c = (np.sin(tilt) ** 2) / (2 * u**2) + (np.cos(tilt) ** 2) / (2 * v**2)
     return offset + height * np.exp(-(_a * (xx - x0) ** 2 + 2 * _b * (xx - x0) * (yy - y0) + _c * (yy - y0) ** 2))
 
 
-def gauss2d(shape: tuple[int, int], offset: float = 0, height: float = 1, width: tuple[float, float] = (3, 3), center: tuple[float, float] = (0, 0), tilt: float = 0):
+def gauss2d(shape: tuple[int, int], offset: float = 0, height: float = 1, size: tuple[float, float] = (3, 3), center: tuple[float, float] = (0, 0), tilt: float = 0):
     """
     Create a 2d gauss image.
 
@@ -300,8 +300,8 @@ def gauss2d(shape: tuple[int, int], offset: float = 0, height: float = 1, width:
             DC Offset.
         height: float
             Height of the gaussian peak.
-        width: tuple[float, float]
-            2D width of the gaussian.
+        size: tuple[float, float]
+            2D size of the gaussian.
         center: tuple[float, float]
             Gaussian center coordinates.
         tilt: float
@@ -311,7 +311,7 @@ def gauss2d(shape: tuple[int, int], offset: float = 0, height: float = 1, width:
         image of the gaussian.
     """
     xx, yy = generate_coordinates(shape, (0, 0), cartesian=True)
-    return gauss2d_fn((xx, yy), center, offset, height, width, tilt)
+    return gauss2d_fn((xx, yy), center, offset, height, size, tilt)
 
 
 def polka(shape: tuple[int, int], radius: float, spacing: tuple[float, float], offset: tuple[float, float] = (0, 0)) -> np.ndarray:
@@ -383,7 +383,7 @@ def register(shape: tuple[int, int], count: tuple[int, int], radius: float, spac
                 points[int(np.floor(x)), int(np.floor(y))] = 1
                 spots.append(points)
             else:
-                spots.append(gauss2d(shape, offset=0, height=1, width=(radius, radius), center=(x, y), tilt=0))
+                spots.append(gauss2d(shape, offset=0, height=1, size=(radius, radius), center=(x, y), tilt=0))
 
     image = np.sum(spots, axis=0)
     if normalize:
@@ -634,7 +634,7 @@ def least_squares_fit_2d(z_data, model, guess_prms=None, bounds=(-np.inf, np.inf
         mask = np.isnan(z_data)
 
     if xy_coords is None:
-        x_coord, y_coord = generate_coordinates(z_data.shape, cartesian=True)
+        x_coord, y_coord = generate_coordinates(z_data.shape, (0, 0), cartesian=True)
     else:
         x_coord, y_coord = xy_coords
 

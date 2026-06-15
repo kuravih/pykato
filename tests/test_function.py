@@ -1,7 +1,7 @@
 import unittest
 from pykato.plotfunction.gridspec_layout import GridSpec_Layout
 from pykato.plotfunction import preset
-from pykato.function import checkers, sinusoid, vortex, box, disk, chord, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient, timestamp_string
+from pykato.function import checkers, sinusoid, vortex, box, disk, chord, gauss2d, airy, polka, register, text, preroll, linear2d, least_squares_fit_2d, gauss2d_fn, airy_fn, linear2d_fn, least_squares_fit, generate_coordinates, gradient, timestamp_string
 from pykato.log import setup_logger
 import numpy as np
 
@@ -89,7 +89,7 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_chord.png")
 
     def test_gauss2d(self):
-        data = gauss2d((200, 200), offset=0, height=1, width=(10, 10), center=(100, 100), tilt=0)
+        data = gauss2d((200, 200), offset=0, height=1, size=(10, 10), center=(100, 100), tilt=0)
         self.assertIsInstance(data, np.ndarray, "Array not returned by function.Gauss2d()")
 
         figure = preset.Imshow_Preset(data)
@@ -149,29 +149,31 @@ class TestFunction(unittest.TestCase):
         figure.savefig("tests/output/function_linear2d.png")
 
     def test_least_squares_fit_2d_gauss2d(self):
-        offset, height, width, center = 0, 1, (25, 25), (100, 100)
-        gauss2d_data = gauss2d((200, 200), offset=offset, height=height, width=width, center=center, tilt=0)
+        offset, height, spot_size, center = 0, 1, (25, 25), (50, 50)
+        gauss2d_data = gauss2d((200, 200), offset=offset, height=height, size=spot_size, center=center, tilt=0)
 
         def fit_gauss_2d_fn(xx_yy, cx, cy, o, h, wx, wy):
             return gauss2d_fn(xx_yy, (cx, cy), o, h, (wx, wy))
 
-        (cx, cy, fit_offset, fit_height, wx, wy), _ = least_squares_fit_2d(gauss2d_data, fit_gauss_2d_fn, guess_prms=(101, 101, 0, 1.1, 25.5, 25.5))  # pylint: disable=unbalanced-tuple-unpacking
+        (cx, cy, fit_offset, fit_height, wx, wy), _ = least_squares_fit_2d(gauss2d_data, fit_gauss_2d_fn, guess_prms=(center[0]*1.01, center[1]*1.01, offset*1.01, height*1.01, spot_size[0]*1.01, spot_size[1]*1.01))  # pylint: disable=unbalanced-tuple-unpacking
         fit_center = (cx, cy)
-        fit_width = (wx, wy)
+        fit_spot_size = (wx, wy)
 
-        self.assertAlmostEqual(offset, fit_offset, delta=0.0001, msg="offset estimation not accurate")
-        self.assertAlmostEqual(height, fit_height, delta=0.0001, msg="height estimation not accurate")
+        self.assertAlmostEqual(offset, fit_offset, delta=0.000001, msg="offset estimation not accurate")
+        self.assertAlmostEqual(height, fit_height, delta=0.000001, msg="height estimation not accurate")
         for val, fit_val in zip(center, fit_center):
-            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="center estimation not accurate")
-        for val, fit_val in zip(width, fit_width):
-            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="width estimation not accurate")
+            self.assertAlmostEqual(val, fit_val, delta=0.000001, msg="center estimation not accurate")
+        for val, fit_val in zip(spot_size, fit_spot_size):
+            self.assertAlmostEqual(val, fit_val, delta=0.000001, msg="width estimation not accurate")
 
-        fit_gauss2d_data = gauss2d((200, 200), offset=fit_offset, height=fit_height, width=fit_width, center=fit_center, tilt=0)
+        fit_gauss2d_data = gauss2d((200, 200), offset=fit_offset, height=fit_height, size=fit_spot_size, center=fit_center, tilt=0)
 
         figure = preset.Imshow_Colorbar_Preset(gauss2d_data)
+        figure.get_cbar_axes().set_ylabel("data")
         figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d_data.png")
 
         figure = preset.Imshow_Colorbar_Preset(fit_gauss2d_data)
+        figure.get_cbar_axes().set_ylabel("fit")
         figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d_fit.png")
 
         delta = gauss2d_data - fit_gauss2d_data
@@ -179,7 +181,39 @@ class TestFunction(unittest.TestCase):
         figure = preset.Imshow_Colorbar_Preset(log_delta)
         figure.get_image().set_clim(-16, 0)
         figure.get_cbar_axes().set_ylabel("Error")
-        figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d.png")
+        figure.savefig("tests/output/delta_least_squares_fit_2d_gauss2d_error.png")
+
+    def test_least_squares_fit_airy(self):
+        center, radius, height = (100, 100), 0.25, 100
+        airy_data = airy((200, 200), center=center, radius=radius, height=height)
+
+        def fit_airy_fn(xx_yy, cx, cy, r, h):
+            return airy_fn(xx_yy, (cx, cy), r, h)
+
+        (cx, cy, fit_radius, fit_height), _ = least_squares_fit_2d(airy_data, fit_airy_fn, guess_prms=(center[0]*1.01, center[1]*1.01, radius*1.01, height*1.01))  # pylint: disable=unbalanced-tuple-unpacking
+        fit_center = (cx, cy)
+
+        self.assertAlmostEqual(radius, fit_radius, delta=0.0001, msg="radius estimation not accurate")
+        self.assertAlmostEqual(height, fit_height, delta=0.0001, msg="height estimation not accurate")
+        for val, fit_val in zip(center, fit_center):
+            self.assertAlmostEqual(val, fit_val, delta=0.0001, msg="center estimation not accurate")
+
+        fit_airy_data = airy((200, 200), center=fit_center, radius=fit_radius, height=fit_height)
+
+        figure = preset.Imshow_Colorbar_Preset(np.log10(airy_data / np.max(airy_data)))
+        figure.get_cbar_axes().set_ylabel("data")
+        figure.savefig("tests/output/delta_least_squares_fit_airy_data.png")
+
+        figure = preset.Imshow_Colorbar_Preset(np.log10(fit_airy_data / np.max(fit_airy_data)))
+        figure.get_cbar_axes().set_ylabel("fit")
+        figure.savefig("tests/output/delta_least_squares_fit_airy_fit.png")
+
+        delta = airy_data - fit_airy_data
+        log_delta = np.log10(np.abs(delta))
+        figure = preset.Imshow_Colorbar_Preset(log_delta)
+        figure.get_image().set_clim(-16, 0)
+        figure.get_cbar_axes().set_ylabel("Error")
+        figure.savefig("tests/output/delta_least_squares_fit_airy_error.png")
 
     def test_least_squares_fit_2d_linear2d(self):
         a, b, c = 3, 2, 1
