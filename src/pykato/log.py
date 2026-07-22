@@ -1,7 +1,7 @@
 import logging
 
 
-def setup_logger(name, terminator="\r"):
+def setup_logger(name, terminator="\r") -> logging.Logger:
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger

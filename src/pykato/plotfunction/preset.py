@@ -619,8 +619,8 @@ def ImageGrid_Colorbar_Preset(images: list[NDArray[np.float64]], figure: Figure 
         imshow_ax.invert_yaxis()
         imshow_image_list.append(imshow_image)
 
-    colorbar_ax = divider.append_axes("right", size="5%", pad=0.1)
-    figure.colorbar(imshow_image, cax=colorbar_ax)
+    colorbar_axes = divider.append_axes("right", size="5%", pad=0.1)
+    figure.colorbar(imshow_image, cax=colorbar_axes)
 
     # -----------------------------------------------------------------------------------------------------------------
     def _plot(xys: list[tuple[np.float64, np.float64]], *args, **kwargs) -> None:
@@ -677,10 +677,10 @@ def ImageGrid_Colorbar_Preset(images: list[NDArray[np.float64]], figure: Figure 
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
-    def _get_cbar_ax() -> Axes:
-        return colorbar_ax
+    def _get_cbar_axes() -> Axes:
+        return colorbar_axes
 
-    figure.get_cbar_ax = _get_cbar_ax
+    figure.get_cbar_axes = _get_cbar_axes
     # -----------------------------------------------------------------------------------------------------------------
 
     # -----------------------------------------------------------------------------------------------------------------
