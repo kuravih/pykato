@@ -215,7 +215,7 @@ class TestPreset(BaseTestPreset):
         y3 = 25 * np.cos(4 * self.data["ω_data"] + np.pi / 2) + 50
         y4 = 25 * np.cos(5 * self.data["ω_data"]) + 50
 
-        image_grid_preset.get_imshow_axes_list()[0].plot(x0, y1)
+        image_grid_preset.get_imshow_axes_list()[0].plot(x0, y1, color='tab:red')
         image_grid_preset.get_imshow_axes_list()[1].plot(x0, y2)
         image_grid_preset.get_imshow_axes_list()[2].plot(x0, y3)
         image_grid_preset.get_imshow_axes_list()[3].plot(x0, y4)
