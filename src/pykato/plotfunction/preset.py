@@ -1281,3 +1281,93 @@ def Imshow_Colorbar_Imshow_Colorbar_Plot_Preset(data: tuple[NDArray[np.float64],
     # -----------------------------------------------------------------------------------------------------------------
 
     return figure
+
+
+
+def Imshow_Colorbar_Plot_Preset(data: NDArray[np.float64], figure: Figure | None = None) -> Figure:
+    """
+    Preset with one Imshow axis and Colorbar axis pair and one axis for plots below
+
+    Examples:
+        figure = preset.Imshow_Colorbar_Plot_Preset(image)
+
+    Parameters:
+        data: NDArray[np.float64]
+            Image.
+        figure: Figure | None = None
+            Figure object.
+
+    Returns: Figure
+            Figure object with the imshow axis.
+
+    Functions:
+        get_image(): AxesImage
+            Get imshow image.
+
+        get_image().set_data(image: NDArray[np.float64])
+            Set imshow image.
+
+        get_imshow_axes(): Axes
+            Get imshow axes.
+
+        get_plot_axes(): Axes
+            Get plot axes.
+
+        get_cbar_axes(): Axes
+            Get colorbar axes.
+
+        close()
+            Properly close the figure.
+    """
+
+    if figure is None:
+        figure = plt.figure()
+
+    gs = GridSpec(nrows=2, ncols=1, height_ratios=(1, 0.5), hspace=0.25, figure=figure)
+
+    imshow_axes = figure.add_subplot(gs[0])
+    imshow_image = imshow_axes.imshow(data)
+    imshow_axes.invert_yaxis()
+
+    divider = make_axes_locatable(imshow_axes)
+    colorbar_axes = divider.append_axes("right", size="5%", pad=0.1)
+    figure.colorbar(imshow_image, cax=colorbar_axes)
+
+    plot_axes = figure.add_subplot(gs[1])
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_image() -> AxesImage:
+        return imshow_image
+
+    figure.get_image = _get_image
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_imshow_axes() -> Axes:
+        return imshow_axes
+
+    figure.get_imshow_axes = _get_imshow_axes
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_plot_axes() -> Axes:
+        return plot_axes
+
+    figure.get_plot_axes = _get_plot_axes
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _get_cbar_axes() -> Axes:
+        return colorbar_axes
+
+    figure.get_cbar_axes = _get_cbar_axes
+    # -----------------------------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------------------------
+    def _close():
+        plt.close(figure)
+
+    figure.close = _close
+    # -----------------------------------------------------------------------------------------------------------------
+
+    return figure
