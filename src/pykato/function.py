@@ -905,3 +905,8 @@ def invert_2x2_arrays(a: float | np.ndarray, b: float | np.ndarray, c: float | n
     p, q = d / Δ, -b / Δ
     r, s = -c / Δ, a / Δ
     return p, q, r, s
+
+
+def latex_standard(number: float, ecode: str = ".4e") -> str:
+    mantissa, exponent = format(number, ecode).split("e")
+    return f"${mantissa} \\times 10^{{{int(exponent)}}}$"
