@@ -3,6 +3,7 @@ from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 from scipy.optimize import curve_fit
 from scipy import special, ndimage
+from scipy.interpolate import make_interp_spline, PPoly
 from skimage import morphology
 from skimage.feature import peak_local_max
 from skimage.measure import regionprops, label
@@ -910,3 +911,10 @@ def invert_2x2_arrays(a: float | np.ndarray, b: float | np.ndarray, c: float | n
 def latex_standard(number: float, ecode: str = ".4e") -> str:
     mantissa, exponent = format(number, ecode).split("e")
     return f"${mantissa} \\times 10^{{{int(exponent)}}}$"
+
+
+def spline_root_finder(xdata, ydata, k, y_target) -> np.ndarray:
+    spl = make_interp_spline(xdata, ydata, k=k)
+    pp = PPoly.from_spline(spl)
+    roots = pp.solve(y_target, extrapolate=False)
+    return roots
