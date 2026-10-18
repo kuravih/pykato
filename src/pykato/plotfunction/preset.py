@@ -227,7 +227,7 @@ def Complex_Imshow_Preset(zimage: NDArray[np.complex64], figure: Figure | None =
     return figure
 
 
-def Imshow_Colorbar_Preset(image: NDArray[np.float64], figure: Figure | None = None) -> Figure:
+def Imshow_Colorbar_Preset(image: np.ndarray, figure: Figure | None = None) -> Figure:
     """
     Preset with an Imshow axis and a colorbar axis.
 
